@@ -8,7 +8,8 @@
 - ядро `kernel/`: класс `CKernel`, функции-переходники `cg_*` между MAME и Circle, автозапуск игры (`game=` в `cmdline.txt` или файл `/mame4all/autostart.txt`);
 - новые драйверы, перенесённые из современного MAME на API 0.37b5:
   - `ampoker2`: American Poker II (Novomatic, 1990), Z80 и AY-3-8910;
-  - `magicrd2`: Magic Card II (Impera, 1996), железо Fun World: R65C02, MC6845, 2× PIA 6821, AY-3-8910.
+  - `magicrd2`: Magic Card II (Impera, 1996), железо Fun World: R65C02, MC6845, 2× PIA 6821, AY-3-8910;
+  - `sailormn`: Pretty Soldier Sailor Moon (Banpresto, 1995), железо Cave: 68000, Z80, YM2151, 2× OKIM6295, EEPROM 93C46, зашифрованные спрайты. Набор ROM — `sailormn.zip` из современного MAME.
 
 ## Сборка
 
@@ -83,6 +84,7 @@ American Poker II при первом запуске (NVRAM пустая) пок
 | Samurai Shodown V | `samsho5` | перестановка P-ROM, CMC50, NEO-PCM2 |
 | Samurai Shodown V Special | `samsh5sp` | перестановка P-ROM, CMC50, NEO-PCM2 |
 | Sengoku 3 | `sengoku3` | CMC42 (графика и fix-слой) |
+| The King of Fighters '98 | `kof98` | перестановка кода 68000, защита-оверлей по адресу 0x100 |
 
 Ещё добавлены незащищённые `kof97pls`, `pbobbl2n`, `ctomaday`, `ghostlop`, `zintrckb`.
 
@@ -96,7 +98,7 @@ American Poker II при первом запуске (NVRAM пустая) пок
 mame4all-pi/          исходники MAME4ALL-pi (первый коммит — оригинал squidrpi @ bf71c5f)
   Makefile.circle     сборка libmame.a под Circle
   src/circle/         OSD-слой для Circle
-  src/drivers/ampoker2.cpp, funworld.cpp   новые драйверы
+  src/drivers/ampoker2.cpp, funworld.cpp, sailormn.cpp   новые драйверы
   src/machine/neocrypt.cpp                 расшифровка картриджей Neo-Geo
 kernel/               ядро Circle (main.cpp, kernel.cpp/.h, Makefile)
 boot/                 config.txt, cmdline.txt, README.txt, mame.cfg для SD-карты
@@ -108,6 +110,7 @@ tools/                перенос ROM-таблиц Neo-Geo из соврем�
 ## Лицензии
 
 - MAME4ALL и MAME 0.37b5 — некоммерческая лицензия MAME (см. `mame4all-pi/readme.txt`).
+- Драйвер sailormn перенесён из драйвера Cave MAME 0.78 (автор Luca Elia).
 - Драйверы ampoker2 и funworld сделаны по драйверам современного MAME (BSD-3-Clause, авторы Roberto Fresca и Peter Ferrie).
 - Circle и circle-stdlib — GPLv3. Прошивка Raspberry Pi — LICENCE.broadcom.
 - ROM-файлы игр в репозиторий не входят.

@@ -671,7 +671,7 @@ OBJ_OTHER = $(OBJ)/drivers/spacefb.o $(OBJ)/drivers/blueprnt.o $(OBJ)/drivers/om
 	$(OBJ)/drivers/ambush.o $(OBJ)/drivers/starcrus.o $(OBJ)/drivers/goindol.o $(OBJ)/drivers/dlair.o $(OBJ)/drivers/meteor.o \
 	$(OBJ)/drivers/aztarac.o $(OBJ)/drivers/mole.o $(OBJ)/drivers/gotya.o $(OBJ)/drivers/mrjong.o $(OBJ)/drivers/polyplay.o \
 	$(OBJ)/drivers/mermaid.o $(OBJ)/drivers/magix.o $(OBJ)/drivers/royalmah.o \
-	$(OBJ)/drivers/ampoker2.o $(OBJ)/drivers/funworld.o
+	$(OBJ)/drivers/ampoker2.o $(OBJ)/drivers/funworld.o $(OBJ)/drivers/sailormn.o
 
 DRVOBJS = \
 	$(OBJ_PACMAN) $(OBJ_NICHIBUT) $(OBJ_PHOENIX) $(OBJ_NAMCO) $(OBJ_UNIVERS) $(OBJ_NINTENDO) $(OBJ_MIDW8080) $(OBJ_MEADOWS) $(OBJ_MIDWAY) \

@@ -3833,6 +3833,75 @@ void init_mslug4(void)
 }
 
 /* Sengoku 3: CMC42 graphics */
+/* King of Fighters '98: 68000 code scramble + overlay protection (from current MAME) */
+static void kof98_decrypt_68k(void)
+{
+	UINT8 *src = memory_region(REGION_CPU1);
+	UINT8 *dst = (UINT8 *)malloc(0x200000);
+	static const UINT32 sec[] = {0x000000,0x100000,0x000004,0x100004,0x10000a,0x00000a,0x10000e,0x00000e};
+	static const UINT32 pos[] = {0x000,0x004,0x00a,0x00e};
+	int i, j, k;
+
+	if (!dst) return;
+	memcpy(dst, src, 0x200000);
+	for (i = 0x800; i < 0x100000; i += 0x200)
+	{
+		for (j = 0; j < 0x100; j += 0x10)
+		{
+			for (k = 0; k < 16; k += 2)
+			{
+				memcpy(&src[i+j+k],       &dst[i+j+sec[k/2]+0x100], 2);
+				memcpy(&src[i+j+k+0x100], &dst[i+j+sec[k/2]],       2);
+			}
+			if (i >= 0x080000 && i < 0x0c0000)
+			{
+				for (k = 0; k < 4; k++)
+				{
+					memcpy(&src[i+j+pos[k]],       &dst[i+j+pos[k]],       2);
+					memcpy(&src[i+j+pos[k]+0x100], &dst[i+j+pos[k]+0x100], 2);
+				}
+			}
+			else if (i >= 0x0c0000)
+			{
+				for (k = 0; k < 4; k++)
+				{
+					memcpy(&src[i+j+pos[k]],       &dst[i+j+pos[k]+0x100], 2);
+					memcpy(&src[i+j+pos[k]+0x100], &dst[i+j+pos[k]],       2);
+				}
+			}
+		}
+		memcpy(&src[i+0x000000], &dst[i+0x000000], 2);
+		memcpy(&src[i+0x000002], &dst[i+0x100000], 2);
+		memcpy(&src[i+0x000100], &dst[i+0x000100], 2);
+		memcpy(&src[i+0x000102], &dst[i+0x100100], 2);
+	}
+	memmove(&src[0x100000], &src[0x200000], 0x400000);
+	free(dst);
+}
+
+static UINT16 kof98_default_rom[2];
+
+static WRITE_HANDLER( kof98_prot_w )
+{
+	UINT8 *rom = memory_region(REGION_CPU1);
+	switch (data & 0xffff)
+	{
+		case 0x0090:	WRITE_WORD(&rom[0x100], 0x00c2); WRITE_WORD(&rom[0x102], 0x00fd); break;
+		case 0x00f0:	WRITE_WORD(&rom[0x100], 0x4e45); WRITE_WORD(&rom[0x102], 0x4f2d); break;
+		default:		WRITE_WORD(&rom[0x100], kof98_default_rom[0]); WRITE_WORD(&rom[0x102], kof98_default_rom[1]); break;
+	}
+}
+
+void init_kof98(void)
+{
+	UINT8 *rom = memory_region(REGION_CPU1);
+	kof98_decrypt_68k();
+	kof98_default_rom[0] = READ_WORD(&rom[0x100]);
+	kof98_default_rom[1] = READ_WORD(&rom[0x102]);
+	init_neogeo();
+	install_mem_write_handler(0, 0x20aaaa, 0x20aaab, kof98_prot_w);
+}
+
 void init_sengoku3(void)
 {
 	neo_decrypt_sprites(0, SENGOKU3_GFX_KEY);
@@ -4111,7 +4180,7 @@ GAME( 1997, lastblad, neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "The
 GAME( 1997, irrmaze,  neogeo,   neogeo, irrmaze, neogeo, ROT0,       "SNK / Saurus", "The Irritating Maze / Ultra Denryu Iraira Bou" )
 GAME( 1998, rbff2,    neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "Real Bout Fatal Fury 2 - The Newcomers / Real Bout Garou Densetsu 2 - the newcomers" )
 GAME( 1998, mslug2,   neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "Metal Slug 2 - Super Vehicle-001/II" )
-GAME( 1998, kof98,    neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "The King of Fighters '98 - The Slugfest / King of Fighters '98 - dream match never ends" )
+GAME( 1998, kof98,    neogeo,   neogeo, neogeo,  kof98,  ROT0_16BIT, "SNK", "The King of Fighters '98 - The Slugfest / King of Fighters '98 - dream match never ends" )
 GAME( 1998, lastbld2, neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "The Last Blade 2 / Bakumatsu Roman - Dai Ni Maku Gekkano Kenshi" )
 GAME( 1998, neocup98, neogeo,   raster, neogeo,  neogeo, ROT0_16BIT, "SNK", "Neo-Geo Cup '98 - The Road to the Victory" )
 GAME( 1999, mslugx,   neogeo,   neogeo, neogeo,  mslugx, ROT0_16BIT, "SNK", "Metal Slug X - Super Vehicle-001" )

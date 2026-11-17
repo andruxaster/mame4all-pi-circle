@@ -2867,6 +2867,7 @@ TESTDRIVER( dlair )
 	DRIVER( magix )		/* (c) 1995 Yun Sung */
 	DRIVER( royalmah )	/* (c) 1982 Falcon */
 	DRIVER( ampoker2 )	/* (c) 1990 Novomatic */
+	DRIVER( sailormn )	/* (c) 1995 Banpresto */
 	DRIVER( magicrd2 )	/* (c) 1996 Impera */
 
 	/* Neo Geo games */
