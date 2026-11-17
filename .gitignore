@@ -1,0 +1,14 @@
+# build output
+mame4all-pi/obj_mame_circle/
+mame4all-pi/libmame.a
+kernel/*.o
+kernel/*.d
+kernel/*.elf
+kernel/*.lst
+kernel/*.map
+kernel/kernel*.img
+sd/
+*.zip
+# ROMs never go into the repository
+*.nv
+roms/

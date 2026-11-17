@@ -2866,6 +2866,8 @@ TESTDRIVER( dlair )
 	DRIVER( mermaid )	/* (c) 1982 Rock-ola */
 	DRIVER( magix )		/* (c) 1995 Yun Sung */
 	DRIVER( royalmah )	/* (c) 1982 Falcon */
+	DRIVER( ampoker2 )	/* (c) 1990 Novomatic */
+	DRIVER( magicrd2 )	/* (c) 1996 Impera */
 
 	/* Neo Geo games */
 	/* the four digits number is the game ID stored at address 0x0108 of the program ROM */

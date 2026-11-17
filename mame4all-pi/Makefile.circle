@@ -1,0 +1,74 @@
+# Build MAME4ALL as a static library for the Circle bare-metal kernel (Raspberry Pi 1 / Zero)
+TARGET = mame
+MAMEOS = circle
+EXE =
+VPATH=src $(wildcard src/cpu/*)
+MD = @mkdir -p
+RM = rm -f
+CC  = arm-none-eabi-gcc
+CPP = arm-none-eabi-g++
+AR  = arm-none-eabi-ar
+
+# circle-stdlib checkout (configured with ./configure -r 1 and built)
+SL ?= $(abspath ../circle-stdlib)
+CIRCLE = $(SL)/libs/circle
+# gcc internal dir and version of the arm-none-eabi toolchain
+GCCV := $(shell dirname $(shell $(CC) -print-libgcc-file-name))
+GCCVER := $(shell $(CC) -dumpversion)
+SYSINC = -nostdinc -isystem "$(GCCV)/../../../arm-none-eabi/include/c++/$(GCCVER)" \
+	-isystem "$(GCCV)/../../../arm-none-eabi/include/c++/$(GCCVER)/arm-none-eabi" \
+	-isystem "$(GCCV)/../../../arm-none-eabi/include/c++/$(GCCVER)/backward" \
+	-isystem "$(SL)/install/arm-none-circle/include" -isystem "$(GCCV)/include"
+ARCH = -DAARCH=32 -mcpu=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=hard
+CIRCLEDEFS = -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -D__circle__=510101 -DRASPPI=1 -DSTDLIB_SUPPORT=3 -U__unix__ -U__linux__
+
+DEFS = -DGP2X -DLSB_FIRST -DALIGN_INTS -DALIGN_SHORTS -DINLINE="static __inline" -Dasm="__asm__ __volatile__" -DMAME_UNDERCLOCK -DENABLE_AUTOFIRE -DBIGCASE -DCIRCLE_BAREMETAL
+
+CFLAGS = $(SYSINC) $(ARCH) $(CIRCLEDEFS) -fsigned-char \
+	-Isrc -Isrc/$(MAMEOS) -Isrc/zlib -I$(CIRCLE)/include -I$(CIRCLE)/addon -I$(SL)/include \
+	-O3 -ffast-math -fomit-frame-pointer -fstrict-aliasing \
+	-fno-common -fsingle-precision-constant \
+	-w -Wno-error=narrowing -fpermissive
+
+OBJ = obj_$(TARGET)_$(MAMEOS)
+OBJDIRS = $(OBJ) $(OBJ)/cpu $(OBJ)/sound $(OBJ)/$(MAMEOS) \
+	$(OBJ)/drivers $(OBJ)/machine $(OBJ)/vidhrdw $(OBJ)/sndhrdw \
+	$(OBJ)/zlib
+
+all:	maketree libmame.a
+
+include src/core.mak
+include src/$(TARGET).mak
+include src/rules.mak
+include src/sound.mak
+include src/$(MAMEOS)/$(MAMEOS).mak
+
+CDEFS = $(DEFS) $(COREDEFS) $(CPUDEFS) $(SOUNDDEFS)
+
+libmame.a: $(COREOBJS) $(OSOBJS) $(DRVOBJS)
+	$(RM) $@
+	$(AR) rcs $@ $(COREOBJS) $(OSOBJS) $(DRVOBJS)
+
+$(OBJ)/%.o: src/%.c
+	@echo Compiling $<...
+	@$(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
+
+$(OBJ)/%.o: src/%.cpp
+	@echo Compiling $<...
+	@$(CPP) $(CDEFS) $(CFLAGS) -fno-rtti -fno-exceptions -c $< -o $@
+
+$(OBJ)/%.o: src/%.s
+	@echo Compiling $<...
+	@$(CPP) $(CDEFS) $(CFLAGS) -c $< -o $@
+
+$(OBJ)/%.o: src/%.S
+	@echo Compiling $<...
+	@$(CPP) $(CDEFS) $(CFLAGS) -c $< -o $@
+
+$(sort $(OBJDIRS)):
+	$(MD) $@
+
+maketree: $(sort $(OBJDIRS))
+
+clean:
+	$(RM) -r $(OBJ) libmame.a

@@ -1,0 +1,16 @@
+#
+# Makefile - MAME4ALL kernel for Raspberry Pi Zero / Pi 1 (Circle + circle-stdlib)
+#
+include ../circle-stdlib/Config.mk
+
+MAMEDIR = ../mame4all-pi
+
+OBJS	= main.o kernel.o
+
+include $(CIRCLEHOME)/Rules.mk
+
+INCLUDE := $(CIRCLE_STDLIB_INCLUDES) $(INCLUDE) -I $(MAMEDIR)/src/circle
+
+LIBS := $(MAMEDIR)/libmame.a $(CIRCLEHOME)/lib/sound/libsound.a $(CIRCLE_STDLIB_LIBS)
+
+-include $(DEPS)
