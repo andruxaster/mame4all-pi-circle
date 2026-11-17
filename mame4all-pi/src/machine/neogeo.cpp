@@ -726,7 +726,7 @@ static void neogeo_custom_memory(void)
 	   they stop with "THIS ROM CARTRIDGE IS FOR USE WITH ORIGINAL SNK BOARDS ONLY") */
 	{
 		static const char *const later[] = {
-			"mslugx", "mslug3", "mslug4", "mslug5", "samsho5", "samsh5sp",
+			"mslugx", "mslug3", "mslug4", "mslug5", "samsho5", "samsh5sp", "sengoku3",
 			"kof97pls", "pbobbl2n", "ctomaday", "ghostlop", "zintrckb", 0 };
 		int i;
 		for (i = 0; later[i]; i++)

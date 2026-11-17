@@ -3653,6 +3653,32 @@ ROM_START( mslug5 )
 	ROM_LOAD_GFX_ODD ( "268-c8c.c8", 0x3000000, 0x800000, 0x551d720e ) /* Plane 2,3 */
 ROM_END
 
+ROM_START( sengoku3 )
+	ROM_REGION( 0x200000, REGION_CPU1 )
+	ROM_LOAD_WIDE_SWAP( "261-ph1.p1", 0x100000, 0x100000, 0xe0d4bc0a )
+	ROM_CONTINUE(                     0x000000, 0x100000 | ROMFLAG_WIDE | ROMFLAG_SWAP )
+
+	NEO_SFIX_FROM_C( 0x20000 )
+
+	NEO_BIOS_ONLY
+	ROM_REGION( 0x80000, REGION_CPU2 )
+	ROM_LOAD( "261-m1.m1", 0x00000, 0x80000, 0x7d501c39 )
+
+	ROM_REGION( 0xe00000, REGION_SOUND1 | REGIONFLAG_SOUNDONLY )
+	ROM_LOAD( "261-v1.v1", 0x000000, 0x400000, 0x64c30081 )
+	ROM_LOAD( "261-v2.v2", 0x400000, 0x400000, 0x392a9c47 )
+	ROM_LOAD( "261-v3.v3", 0x800000, 0x400000, 0xc1a7ebe3 )
+	ROM_LOAD( "261-v4.v4", 0xc00000, 0x200000, 0x9000d085 )
+
+	NO_DELTAT_REGION
+
+	ROM_REGION( 0x2000000, REGION_GFX2 )	/* encrypted (CMC42) */
+	ROM_LOAD_GFX_EVEN( "261-c1.c1", 0x0000000, 0x800000, 0xded84d9c ) /* Plane 0,1 */
+	ROM_LOAD_GFX_ODD ( "261-c2.c2", 0x0000000, 0x800000, 0xb8eb4348 ) /* Plane 2,3 */
+	ROM_LOAD_GFX_EVEN( "261-c3.c3", 0x1000000, 0x800000, 0x84e2034a ) /* Plane 0,1 */
+	ROM_LOAD_GFX_ODD ( "261-c4.c4", 0x1000000, 0x800000, 0x0b45ae53 ) /* Plane 2,3 */
+ROM_END
+
 ROM_START( samsho5 )
 	ROM_REGION( 0x800000, REGION_CPU1 )	/* encrypted (block scramble) */
 	ROM_LOAD_WIDE_SWAP( "270-p1.p1",  0x000000, 0x400000, 0x4a2a09e6 )
@@ -3803,6 +3829,13 @@ void init_mslug4(void)
 	neo_decrypt_sprites(1, MSLUG4_GFX_KEY);
 	if (memory_region(REGION_SOUND1))
 		neo_pcm2_decrypt(memory_region(REGION_SOUND1), memory_region_length(REGION_SOUND1), 8);
+	init_neogeo();
+}
+
+/* Sengoku 3: CMC42 graphics */
+void init_sengoku3(void)
+{
+	neo_decrypt_sprites(0, SENGOKU3_GFX_KEY);
 	init_neogeo();
 }
 
@@ -4087,6 +4120,7 @@ GAME( 1999, garou,    neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "Gar
 GAME( 2000, mslug3,   neogeo,   neobigfix, neogeo, mslug3, ROT0_16BIT, "SNK", "Metal Slug 3" )
 GAME( 2002, mslug4,   neogeo,   neogeo, neogeo,  mslug4, ROT0_16BIT, "Mega / Noise Factory / Playmore", "Metal Slug 4" )
 GAME( 2003, mslug5,   neogeo,   neogeo, neogeo,  mslug5, ROT0_16BIT, "SNK Playmore", "Metal Slug 5" )
+GAME( 2001, sengoku3, neogeo,   neogeo, neogeo,  sengoku3, ROT0_16BIT, "Noise Factory / SNK", "Sengoku 3 / Sengoku Densho 2001" )
 GAME( 2003, samsho5,  neogeo,   neogeo, neogeo,  samsho5, ROT0_16BIT, "Yuki Enterprise / SNK Playmore", "Samurai Shodown V / Samurai Spirits Zero" )
 GAME( 2004, samsh5sp, neogeo,   neogeo, neogeo,  samsh5sp, ROT0_16BIT, "Yuki Enterprise / SNK Playmore", "Samurai Shodown V Special / Samurai Spirits Zero Special" )
 GAME( 1996, zintrckb, neogeo  , neogeo, neogeo,  neogeo, ROT0_16BIT, "bootleg", "Zintrick / Oshidashi Zentrix (bootleg of CD version)" )

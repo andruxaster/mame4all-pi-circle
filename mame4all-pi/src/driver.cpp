@@ -3030,6 +3030,7 @@ TESTDRIVER( dlair )
 	DRIVER( mslug5 )	/* 0268 (c) 2003 SNK Playmore */
 	DRIVER( samsho5 )	/* 0270 (c) 2003 Yuki Enterprise / SNK Playmore */
 	DRIVER( samsh5sp )	/* 0272 (c) 2004 Yuki Enterprise / SNK Playmore */
+	DRIVER( sengoku3 )	/* 0261 (c) 2001 Noise Factory / SNK */
 	DRIVER( zintrckb )	/* bootleg of the CD version */
 	DRIVER( kof97pls )	/* bootleg */
 	DRIVER( ghostlop )	/* (c) 1996 Data East (prototype) */

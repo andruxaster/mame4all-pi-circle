@@ -8,6 +8,7 @@
 #define SAMSHO5_GFX_KEY		0x0f
 #define SAMSHO5SP_GFX_KEY	0x0d
 #define MSLUG5_GFX_KEY		0x19
+#define SENGOKU3_GFX_KEY	0xfe	/* CMC42 */
 
 int neo_cmc42_gfx_decrypt(UINT8 *rom, UINT32 rom_size, int extra_xor);
 int neo_cmc50_gfx_decrypt(UINT8 *rom, UINT32 rom_size, int extra_xor);

@@ -82,6 +82,7 @@ American Poker II при первом запуске (NVRAM пустая) пок
 | Metal Slug 5 | `mslug5` | PVC (шифрование 68000, банки, регистры цвета), CMC50, NEO-PCM2 |
 | Samurai Shodown V | `samsho5` | перестановка P-ROM, CMC50, NEO-PCM2 |
 | Samurai Shodown V Special | `samsh5sp` | перестановка P-ROM, CMC50, NEO-PCM2 |
+| Sengoku 3 | `sengoku3` | CMC42 (графика и fix-слой) |
 
 Ещё добавлены незащищённые `kof97pls`, `pbobbl2n`, `ctomaday`, `ghostlop`, `zintrckb`.
 
