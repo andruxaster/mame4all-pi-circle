@@ -67,6 +67,40 @@ static int palno,modulo,where,high_tile,vhigh_tile,vvhigh_tile;
 int no_of_tiles;
 static int palette_swap_pending,fix_bank;
 
+/* fix layer banking of the encrypted carts with 512 KB of fix data
+   (0 = none, 1 = Garou / Metal Slug 3 line banking, set by the driver init) */
+int neogeo_fix_bank_type = 0;
+static int fix_line_bank[32];
+
+static void neogeo_build_fix_banks(void)
+{
+	int bank = 0, k = 0, y = 0;
+
+	for (y = 0; y < 32; y++) fix_line_bank[y] = 0;
+	if (neogeo_fix_bank_type != 1) return;
+
+	y = 0;
+	while (y < 32)
+	{
+		if (READ_WORD(&vidram[0xea00 + 2*k]) == 0x0200 && (READ_WORD(&vidram[0xeb00 + 2*k]) & 0xff00) == 0xff00)
+		{
+			bank = READ_WORD(&vidram[0xeb00 + 2*k]) & 3;
+			fix_line_bank[y++] = bank;
+		}
+		if (y < 32) fix_line_bank[y++] = bank;
+		k += 2;
+	}
+}
+
+/* tile code including the bank for fix row y */
+static inline int neogeo_fix_code(int code, int y)
+{
+	code &= 0xfff;
+	if (neogeo_fix_bank_type == 1 && fix_bank == 0)
+		code += 0x1000 * (fix_line_bank[(y - 2) & 31] ^ 3);
+	return code;
+}
+
 extern unsigned char *neogeo_ram;
 extern unsigned int neogeo_frame_counter;
 extern int neogeo_game_fix;
@@ -317,10 +351,11 @@ static const unsigned char *neogeo_palette(const struct rectangle *clip)
 	pen_usage= Machine->gfx[fix_bank]->pen_usage;
 	pal_base = Machine->drv->gfxdecodeinfo[fix_bank].color_codes_start;
 	for (color = 0;color < 16;color++) colmask[color] = 0;
+	neogeo_build_fix_banks();
 	for (offs=0xe000;offs<0xea00;offs+=2) {
 		code = READ_WORD( &vidram[offs] );
 		color = code >> 12;
-		colmask[color] |= pen_usage[code&0xfff];
+		colmask[color] |= pen_usage[neogeo_fix_code(code, ((offs - 0xe000) >> 1) & 31)];
 	}
 	for (color = 0;color < 16;color++)
 	{
@@ -1128,12 +1163,13 @@ if (!dotiles) { 					/* debug */
 	pen_usage=gfx->pen_usage;
 
 	/* Character foreground */
+	neogeo_build_fix_banks();
 	for (y=clip->min_y/8; y<=clip->max_y/8; y++) {
 		for (x=0; x<40; x++) {
 
   			int byte1 = (READ_WORD(&vidram[0xE000 + 2*(y + 32*x)]));
   			int byte2 = byte1 >> 12;
-		   	byte1 = byte1 & 0xfff;
+		   	byte1 = neogeo_fix_code(byte1, y);
 
 			if ((pen_usage[byte1] & ~1) == 0) continue;
 

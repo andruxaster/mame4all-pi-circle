@@ -44,6 +44,42 @@ void showdisclaimer(void)   /* MAURY_BEGIN: dichiarazione */
 
 void gp2x_printf(char* fmt, ...);
 
+/* Alternative file names for ROMs whose dumps were renamed after MAME 0.37b5.
+   Used when neither the name nor the CRC can be found, e.g. the Neo-Geo BIOS
+   files of current MAME sets (neogeo.zip). A ROM found this way is accepted
+   without a CRC check. */
+static const char *const rom_aliases[][3] =
+{
+	{ "neo-geo.rom", "sp-s2.sp1", 0 },
+	{ "ng-sm1.rom",  "sm1.sm1",   0 },
+	{ "ng-sfix.rom", "sfix.sfix", "sfix.sfx" },
+	{ 0, 0, 0 }
+};
+
+static void *open_rom_alias(const char *name, int *checksum)
+{
+	int i, j;
+	for (i = 0; rom_aliases[i][0]; i++)
+	{
+		if (strcmp(rom_aliases[i][0], name) != 0) continue;
+		for (j = 1; j < 3 && rom_aliases[i][j]; j++)
+		{
+			const struct GameDriver *drv = Machine->gamedrv;
+			do
+			{
+				void *f = osd_fopen(drv->name, rom_aliases[i][j], OSD_FILETYPE_ROM, 0);
+				if (f)
+				{
+					*checksum = osd_fcrc(f);
+					return f;
+				}
+				drv = drv->clone_of;
+			} while (drv);
+		}
+	}
+	return 0;
+}
+
 int readroms(void)
 {
 	int region;
@@ -161,6 +197,9 @@ int readroms(void)
 						drv = drv->clone_of;
 					} while (f == 0 && drv);
 				}
+
+				if (f == 0)
+					f = open_rom_alias(name, &expchecksum);
 			}
 
 			if (f)

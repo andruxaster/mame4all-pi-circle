@@ -618,7 +618,7 @@ $(OBJ)/drivers/galpanic.o: src/vidhrdw/galpanic.cpp src/drivers/galpanic.cpp
 $(OBJ)/drivers/airbustr.o: src/vidhrdw/airbustr.cpp src/drivers/airbustr.cpp
 OBJ_KANEKO = $(OBJ)/drivers/kaneko16.o $(OBJ)/drivers/galpanic.o $(OBJ)/drivers/airbustr.o
 
-$(OBJ)/drivers/neogeo.o: src/machine/neogeo.cpp src/machine/pd4990a.cpp src/vidhrdw/neogeo.cpp src/drivers/neogeo.cpp
+$(OBJ)/drivers/neogeo.o: src/machine/neogeo.cpp src/machine/neocrypt.cpp src/machine/pd4990a.cpp src/vidhrdw/neogeo.cpp src/drivers/neogeo.cpp
 OBJ_NEOGEO = $(OBJ)/drivers/neogeo.o
 
 $(OBJ)/drivers/hanaawas.o: src/vidhrdw/hanaawas.cpp src/drivers/hanaawas.cpp

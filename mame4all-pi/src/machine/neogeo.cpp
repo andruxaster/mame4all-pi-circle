@@ -92,6 +92,9 @@ void init_neogeo(void)
 {
 	unsigned char *RAM = memory_region(REGION_CPU1);
 	extern struct YM2610interface neogeo_ym2610_interface;
+	extern int neogeo_fix_bank_type;
+
+	neogeo_fix_bank_type = 0;
 
 	if (memory_region(REGION_SOUND2))
 	{
@@ -719,6 +722,21 @@ static void neogeo_custom_memory(void)
 			 !strcmp(Machine->gamedrv->name,"garou"))
 		sram_protection_hack = 0x100;
 
+	/* the later carts do the same check (SRAM word 0xd00100 must stay 0, otherwise
+	   they stop with "THIS ROM CARTRIDGE IS FOR USE WITH ORIGINAL SNK BOARDS ONLY") */
+	{
+		static const char *const later[] = {
+			"mslugx", "mslug3", "mslug4", "mslug5", "samsho5", "samsh5sp",
+			"kof97pls", "pbobbl2n", "ctomaday", "ghostlop", "zintrckb", 0 };
+		int i;
+		for (i = 0; later[i]; i++)
+		{
+			const struct GameDriver *d = Machine->gamedrv;
+			while (d && strcmp(d->name, later[i]) != 0) d = d->clone_of;
+			if (d) sram_protection_hack = 0x100;
+		}
+	}
+
 	if (!strcmp(Machine->gamedrv->name,"pulstar"))
 		sram_protection_hack = 0x35a;
 
@@ -757,33 +775,6 @@ static void neogeo_custom_memory(void)
 		WRITE_WORD(&RAM[0x0000],0x0010);
 	}
 
-	if (!strcmp(Machine->gamedrv->name,"mslugx"))
-	{
-		/* patch out protection checks */
-		int i;
-		unsigned char *RAM = memory_region(REGION_CPU1);
-
-		for (i = 0;i < 0x100000;i+=2)
-		{
-			if (READ_WORD(&RAM[i+0]) == 0x0243 &&
-				READ_WORD(&RAM[i+2]) == 0x0001 &&	/* andi.w  #$1, D3 */
-				READ_WORD(&RAM[i+4]) == 0x6600)		/* bne xxxx */
-			{
-				WRITE_WORD(&RAM[i+4],0x4e71);
-				WRITE_WORD(&RAM[i+6],0x4e71);
-			}
-		}
-
-		WRITE_WORD(&RAM[0x3bdc],0x4e71);
-		WRITE_WORD(&RAM[0x3bde],0x4e71);
-		WRITE_WORD(&RAM[0x3be0],0x4e71);
-		WRITE_WORD(&RAM[0x3c0c],0x4e71);
-		WRITE_WORD(&RAM[0x3c0e],0x4e71);
-		WRITE_WORD(&RAM[0x3c10],0x4e71);
-
-		WRITE_WORD(&RAM[0x3c36],0x4e71);
-		WRITE_WORD(&RAM[0x3c38],0x4e71);
-	}
 }
 
 

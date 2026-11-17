@@ -22,7 +22,7 @@ SYSINC = -nostdinc -isystem "$(GCCV)/../../../arm-none-eabi/include/c++/$(GCCVER
 ARCH = -DAARCH=32 -mcpu=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=hard
 CIRCLEDEFS = -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -D__circle__=510101 -DRASPPI=1 -DSTDLIB_SUPPORT=3 -U__unix__ -U__linux__
 
-DEFS = -DGP2X -DLSB_FIRST -DALIGN_INTS -DALIGN_SHORTS -DINLINE="static __inline" -Dasm="__asm__ __volatile__" -DMAME_UNDERCLOCK -DENABLE_AUTOFIRE -DBIGCASE -DCIRCLE_BAREMETAL
+DEFS = -DGP2X -DLSB_FIRST -DALIGN_INTS -DALIGN_SHORTS -DINLINE="static __inline" -Dasm="__asm__ __volatile__" -DMAME_UNDERCLOCK -DENABLE_AUTOFIRE -DBIGCASE -DCIRCLE_BAREMETAL $(EXTRADEFS)
 
 CFLAGS = $(SYSINC) $(ARCH) $(CIRCLEDEFS) -fsigned-char \
 	-Isrc -Isrc/$(MAMEOS) -Isrc/zlib -I$(CIRCLE)/include -I$(CIRCLE)/addon -I$(SL)/include \

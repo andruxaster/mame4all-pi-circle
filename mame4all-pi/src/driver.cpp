@@ -2889,9 +2889,9 @@ TESTDRIVER( dlair )
 	/* 0015 */
 	DRIVER( kotm )		/* 0016 (c) 1991 SNK */
 	DRIVER( sengoku )	/* 0017 (c) 1991 SNK */
-	DRIVER( sengokh )	/* 0017 (c) 1991 SNK */
+	DRIVER( sengokuh )	/* 0017 (c) 1991 SNK */
 	DRIVER( burningf )	/* 0018 (c) 1991 SNK */
-	DRIVER( burningh )	/* 0018 (c) 1991 SNK */
+	DRIVER( burningfh )	/* 0018 (c) 1991 SNK */
 	DRIVER( lbowling )	/* 0019 (c) 1990 SNK */
 	DRIVER( gpilots )	/* 0020 (c) 1991 SNK */
 	DRIVER( joyjoy )	/* 0021 (c) 1990 SNK */
@@ -2957,10 +2957,10 @@ TESTDRIVER( dlair )
 	DRIVER( quizkof )	/* 0080 (c) 1995 Saurus */
 	DRIVER( ssideki3 )	/* 0081 (c) 1995 SNK */
 	DRIVER( doubledr )	/* 0082 (c) 1995 Technos */
-	DRIVER( pbobble )	/* 0083 (c) 1994 Taito */
+	DRIVER( pbobblen )	/* 0083 (c) 1994 Taito */
 	DRIVER( kof95 )		/* 0084 (c) 1995 SNK */
 	/* 0085 Shinsetsu Samurai Spirits Bushidoretsuden / Samurai Shodown RPG (CD only) */
-	DRIVER( tws96 )		/* 0086 (c) 1996 Tecmo */
+	DRIVER( twsoc96 )		/* 0086 (c) 1996 Tecmo */
 	DRIVER( samsho3 )	/* 0087 (c) 1995 SNK */
 	DRIVER( stakwin )	/* 0088 (c) 1995 Saurus */
 	DRIVER( pulstar )	/* 0089 (c) 1995 Aicom */
@@ -2977,7 +2977,7 @@ TESTDRIVER( dlair )
 	DRIVER( turfmast )	/* 0200 (c) 1996 Nazca */
 	DRIVER( mslug )		/* 0201 (c) 1996 Nazca */
 	DRIVER( puzzledp )	/* 0202 (c) 1995 Taito (Visco license) */
-	DRIVER( mosyougi )	/* 0203 (c) 1995 ADK / SNK */
+	DRIVER( moshougi )	/* 0203 (c) 1995 ADK / SNK */
 	/* 0204 ADK World (CD only) */
 	/* 0205 Neo-Geo CD Special (CD only) */
 	DRIVER( marukodq )	/* 0206 (c) 1995 Takara */
@@ -3022,9 +3022,17 @@ TESTDRIVER( dlair )
 	DRIVER( breakrev )	/* 0245 (c) 1998 Visco */
 	DRIVER( shocktr2 )	/* 0246 (c) 1998 Saurus */
 	DRIVER( flipshot )	/* 0247 (c) 1998 Visco */
-TESTDRIVER( pbobbl2n )	/* 0248 (c) 1999 Taito (SNK license) */
-TESTDRIVER( ctomaday )	/* 0249 (c) 1999 Visco */
-TESTDRIVER( mslugx )	/* 0250 (c) 1999 SNK */
+	DRIVER( pbobbl2n )	/* 0248 (c) 1999 Taito (SNK license) */
+	DRIVER( ctomaday )	/* 0249 (c) 1999 Visco */
+	DRIVER( mslugx )	/* 0250 (c) 1999 SNK */
+	DRIVER( mslug3 )	/* 0256 (c) 2000 SNK */
+	DRIVER( mslug4 )	/* 0263 (c) 2002 Mega */
+	DRIVER( mslug5 )	/* 0268 (c) 2003 SNK Playmore */
+	DRIVER( samsho5 )	/* 0270 (c) 2003 Yuki Enterprise / SNK Playmore */
+	DRIVER( samsh5sp )	/* 0272 (c) 2004 Yuki Enterprise / SNK Playmore */
+	DRIVER( zintrckb )	/* bootleg of the CD version */
+	DRIVER( kof97pls )	/* bootleg */
+	DRIVER( ghostlop )	/* (c) 1996 Data East (prototype) */
 TESTDRIVER( kof99 )		/* 0251 (c) 1999 SNK */
 TESTDRIVER( garou )		/* 0253 (c) 1999 SNK */
 	/* Prehistoric Isle 2 */

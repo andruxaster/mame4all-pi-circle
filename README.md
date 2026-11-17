@@ -68,6 +68,27 @@ American Poker II при первом запуске (NVRAM пустая) пок
 
 Лампы, счётчики, хоппер не эмулируются.
 
+## Neo-Geo
+
+Драйвер `neogeo` переведён на ROM-наборы современного MAME: имена и CRC файлов, включая BIOS, взяты из `neogeo.zip` текущего MAME (`sp-s2.sp1`, `sm1.sm1`, `sfix.sfix`). Старые наборы формата 0.37b5 для переделанных игр больше не подходят.
+
+Добавлены игры с защитой картриджа. Расшифровка выполняется один раз при загрузке игры, код перенесён из современного MAME (`mame4all-pi/src/machine/neocrypt.cpp`):
+
+| Игра | Набор | Что эмулируется |
+|---|---|---|
+| Metal Slug X | `mslugx` | защита Altera-чипа |
+| Metal Slug 3 | `mslug3` | SMA (шифрование 68000, переключение банков), CMC42, банки fix-слоя |
+| Metal Slug 4 | `mslug4` | CMC50 (графика и M1), NEO-PCM2 |
+| Metal Slug 5 | `mslug5` | PVC (шифрование 68000, банки, регистры цвета), CMC50, NEO-PCM2 |
+| Samurai Shodown V | `samsho5` | перестановка P-ROM, CMC50, NEO-PCM2 |
+| Samurai Shodown V Special | `samsh5sp` | перестановка P-ROM, CMC50, NEO-PCM2 |
+
+Ещё добавлены незащищённые `kof97pls`, `pbobbl2n`, `ctomaday`, `ghostlop`, `zintrckb`.
+
+Самым большим наборам нужно около 100 МБ RAM. На Pi Zero это помещается, загрузка с расшифровкой занимает несколько секунд.
+
+`tools/neo_romconv.py` и `tools/neo_addsets.py` переносят ROM-таблицы из `src/mame/snk/neogeo.cpp` современного MAME в синтаксис 0.37b5.
+
 ## Структура
 
 ```
@@ -75,10 +96,12 @@ mame4all-pi/          исходники MAME4ALL-pi (первый коммит 
   Makefile.circle     сборка libmame.a под Circle
   src/circle/         OSD-слой для Circle
   src/drivers/ampoker2.cpp, funworld.cpp   новые драйверы
+  src/machine/neocrypt.cpp                 расшифровка картриджей Neo-Geo
 kernel/               ядро Circle (main.cpp, kernel.cpp/.h, Makefile)
 boot/                 config.txt, cmdline.txt, README.txt, mame.cfg для SD-карты
 circle-stdlib/        подмодуль (Circle + newlib)
 build.sh              полная сборка и сборка SD-карты
+tools/                перенос ROM-таблиц Neo-Geo из современного MAME
 ```
 
 ## Лицензии
