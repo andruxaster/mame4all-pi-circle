@@ -99,6 +99,7 @@ void open_config_file(void)
 void close_config_file(void)
 {
 	g_key_file_free(gkeyfile);
+	gkeyfile = 0;	/* init_inpdir () reads the config again after parse_cmdline () closed it */
 }
 
 /*
