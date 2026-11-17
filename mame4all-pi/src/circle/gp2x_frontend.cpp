@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include "driver.h"
 #include "minimal.h"
 #include "gp2x_frontend_list.h"
 #include <SDL.h>
@@ -287,8 +288,75 @@ static void game_list_init_cache(void)
 		game_list_init_nocache();
 }
 
+/* Bring the static game list (gp2x_frontend_list.h, made for the original MAME4ALL)
+   in line with the drivers compiled in: drop entries of renamed or removed sets,
+   add the drivers that were added later, then sort by description.
+   New entries take the ASM core setting of a listed game with the same machine driver. */
+static int fe_compare(const void *a, const void *b)
+{
+	const struct fe_driver *x = (const struct fe_driver *)a, *y = (const struct fe_driver *)b;
+	if (!x->name[0]) return y->name[0] ? 1 : 0;
+	if (!y->name[0]) return -1;
+	return strcasecmp(x->description, y->description);
+}
+
+static const struct GameDriver *fe_find_driver(const char *name)
+{
+	int d;
+	for (d = 0; drivers[d]; d++)
+		if (strcmp(drivers[d]->name, name) == 0) return drivers[d];
+	return 0;
+}
+
+static void fe_list_sync(void)
+{
+	static int done = 0;
+	int i, d, n = 0;
+	if (done) return;
+	done = 1;
+
+	/* keep the listed games that still exist, remember their machine drivers */
+	static const struct MachineDriver *machine[NUMGAMES];
+	for (i = 0; i < NUMGAMES; i++)
+	{
+		const struct GameDriver *gd;
+		if (!fe_drivers[i].name[0]) continue;
+		gd = fe_find_driver(fe_drivers[i].name);
+		if (!gd) continue;
+		if (n != i) fe_drivers[n] = fe_drivers[i];
+		strncpy(fe_drivers[n].description, gd->description, sizeof fe_drivers[n].description - 1);
+		machine[n] = gd->drv;
+		n++;
+	}
+	int listed = n;
+
+	/* add the drivers that are missing */
+	for (d = 0; drivers[d] && n < NUMGAMES; d++)
+	{
+		const struct GameDriver *gd = drivers[d];
+		int cores = 0;
+		for (i = 0; i < listed; i++)
+			if (strcmp(fe_drivers[i].name, gd->name) == 0) break;
+		if (i < listed) continue;
+		if (gd->flags & NOT_A_DRIVER) continue;
+		for (i = 0; i < listed; i++)
+			if (machine[i] == gd->drv) { cores = fe_drivers[i].cores; break; }
+		memset(&fe_drivers[n], 0, sizeof fe_drivers[n]);
+		strncpy(fe_drivers[n].description, gd->description, sizeof fe_drivers[n].description - 1);
+		strncpy(fe_drivers[n].name, gd->name, sizeof fe_drivers[n].name - 1);
+		strcpy(fe_drivers[n].exe, "mame");
+		fe_drivers[n].cores = cores;
+		n++;
+	}
+	for (i = n; i < NUMGAMES; i++)
+		memset(&fe_drivers[i], 0, sizeof fe_drivers[i]);
+
+	qsort(fe_drivers, n, sizeof fe_drivers[0], fe_compare);
+}
+
 static void game_list_init(int argc)
 {
+	fe_list_sync();
 	if (argc==1)
 		game_list_init_nocache();
 	else

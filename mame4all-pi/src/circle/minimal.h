@@ -84,6 +84,8 @@ void cg_sound_stop(void);
 int  cg_sound_free_frames(void);
 void cg_sound_write(const short *samples, int frames);  /* interleaved if stereo */
 void cg_wait_vsync(void);
+void cg_status(const char *text);                       /* status line, e.g. ROM loading */
+void cg_heartbeat(void);
 #ifdef __cplusplus
 }
 #endif

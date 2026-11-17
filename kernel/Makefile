@@ -5,7 +5,7 @@ include ../circle-stdlib/Config.mk
 
 MAMEDIR = ../mame4all-pi
 
-OBJS	= main.o kernel.o
+OBJS	= main.o kernel.o alignfix.o alignfix_s.o
 
 include $(CIRCLEHOME)/Rules.mk
 

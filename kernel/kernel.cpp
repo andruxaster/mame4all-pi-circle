@@ -7,6 +7,8 @@
 //                       sounddev=sndpwm|sndhdmi|sndnone
 //
 #include "kernel.h"
+#include "alignfix.h"
+#include <circle/chargenerator.h>
 #include <circle/sound/hdmisoundbasedevice.h>
 #include <circle/sound/pwmsoundbasedevice.h>
 #include <circle/screen.h>
@@ -30,12 +32,13 @@ CKernel *CKernel::s_pThis = 0;
 
 CKernel::CKernel (void)
 :	CStdlibApp ("mame4all"),
+	mTee (&mSerial),
 	mTimer (&mInterrupt),
 	mLogger (mOptions.GetLogLevel (), &mTimer),
 	mCPUThrottle (CPUSpeedMaximum),
 	mUSBHCI (&mInterrupt, &mTimer, TRUE),
 	mEMMC (&mInterrupt, &mTimer, &mActLED),
-	mConsole (&mSerial, &mSerial),
+	mConsole (&mSerial, &mTee),
 	m_pFrameBuffer (0),
 	m_nFBWidth (0), m_nFBHeight (0), m_nOffsetX (0),
 	m_nAspect (169),
@@ -44,7 +47,9 @@ CKernel::CKernel (void)
 	m_nSoundChannels (1),
 	m_nLastUSB (0),
 	m_pKeyboard (0),
-	m_PrevMods (0)
+	m_PrevMods (0),
+	m_nHeartbeat (0), m_nWatchBeat (0), m_nWatchTicks (0),
+	m_bHangShown (FALSE), m_nPresented (0), m_nLoggedFixups (0)
 {
 	s_pThis = this;
 	memset (m_PrevKeys, 0, sizeof m_PrevKeys);
@@ -60,7 +65,9 @@ bool CKernel::Initialize (void)
 {
 	if (!CStdlibApp::Initialize ()) return false;
 	if (!mSerial.Initialize (115200)) return false;
-	if (!mLogger.Initialize (&mSerial)) return false;
+	if (!mLogger.Initialize (&mTee)) return false;
+	mLogger.RegisterPanicHandler (PanicHandler);
+	AlignFixInstall ();
 	if (!mTimer.Initialize ()) return false;
 	if (!mEMMC.Initialize ()) return false;
 	if (f_mount (&mFileSystem, "SD:", 1) != FR_OK)
@@ -68,6 +75,7 @@ bool CKernel::Initialize (void)
 		Fatal ("Cannot mount the SD card (FAT32 needed)");
 	}
 	mUSBHCI.Initialize ();
+	mTimer.RegisterPeriodicHandler (WatchdogHandler);
 	if (!mConsole.Initialize ()) return false;
 	CGlueStdioInit (mConsole);
 	return true;
@@ -100,6 +108,8 @@ CStdlibApp::TShutdownMode CKernel::Run (void)
 	mLogger.Write (GetKernelName (), LogNotice, "MAME4ALL (Circle), " __DATE__);
 
 	InitKeyTable ();
+
+
 	m_nAspect = mOptions.GetAppOptionDecimal ("aspect", 169) == 43 ? 43 : 169;
 
 	if (chdir ("/mame4all") != 0)
@@ -126,6 +136,26 @@ CStdlibApp::TShutdownMode CKernel::Run (void)
 			fclose (f);
 		}
 	}
+	// self tests for the diagnostics (cmdline.txt aligntest=1 / crashtest=1, or that word in autostart.txt)
+	if (mOptions.GetAppOptionDecimal ("aligntest", 0) == 1 || strcmp (GameName, "aligntest") == 0)
+	{
+		static u8 Buf[32] __attribute__ ((aligned (8)));
+		for (unsigned i = 0; i < sizeof Buf; i++) Buf[i] = i;
+		register u32 r2 asm ("r2"), r3 asm ("r3");
+		u8 *pAddr = Buf + 1;
+		asm volatile ("ldrd r2, r3, [%2]" : "=r" (r2), "=r" (r3) : "r" (pAddr) : "memory");
+		u32 a = r2, b = r3;
+		u32 c = 0, d = 0, *pAddr2 = (u32 *) (Buf + 6);
+		asm volatile ("ldmia %2, {%0, %1}" : "=r" (c), "=r" (d) : "r" (pAddr2) : "memory");
+		mLogger.Write (GetKernelName (), LogNotice, "aligntest: ldrd %08X %08X, ldm %08X %08X, fixups %u",
+			a, b, c, d, g_nAlignFixups);
+	}
+	if (mOptions.GetAppOptionDecimal ("crashtest", 0) == 1 || strcmp (GameName, "crashtest") == 0)
+	{
+		mLogger.Write (GetKernelName (), LogNotice, "crashtest: writing to an invalid address");
+		*(volatile u32 *) 0xF0000000 = 0;
+	}
+
 	if (GameName[0] != '\0')
 	{
 		argv[argc++] = GameName;
@@ -166,10 +196,20 @@ void CKernel::SetMode (int nWidth, int nHeight)
 	u8 *pFB = (u8 *) (uintptr) m_pFrameBuffer->GetBuffer ();
 	memset (pFB, 0, m_pFrameBuffer->GetPitch () * nHeight);
 	mLogger.Write (GetKernelName (), LogNotice, "Video %dx%d (frame %ux%d)", nWidth, nHeight, nFBWidth, nHeight);
+	m_nPresented = 0;
+	SaveLog ();
 }
 
 void CKernel::Present565 (const unsigned short *pSrc, int nWidth, int nHeight)
 {
+	Heartbeat ();
+	if (++m_nPresented == 120 || (m_nPresented % 600 == 0 && g_nAlignFixups != m_nLoggedFixups))
+	{
+		m_nLoggedFixups = g_nAlignFixups;
+		mLogger.Write (GetKernelName (), LogNotice, "Running, frame %u, alignment fixups %u (last PC %08X)",
+			m_nPresented, g_nAlignFixups, g_nAlignLastPC);
+		if (m_nPresented == 120) SaveLog ();
+	}
 	if (m_pFrameBuffer == 0) return;
 	u8 *pFB = (u8 *) (uintptr) m_pFrameBuffer->GetBuffer ();
 	unsigned nPitch = m_pFrameBuffer->GetPitch ();
@@ -182,6 +222,14 @@ void CKernel::Present565 (const unsigned short *pSrc, int nWidth, int nHeight)
 
 void CKernel::Present8 (const unsigned char *pSrc, const unsigned short *pPal, int nWidth, int nHeight)
 {
+	Heartbeat ();
+	if (++m_nPresented == 120 || (m_nPresented % 600 == 0 && g_nAlignFixups != m_nLoggedFixups))
+	{
+		m_nLoggedFixups = g_nAlignFixups;
+		mLogger.Write (GetKernelName (), LogNotice, "Running, frame %u, alignment fixups %u (last PC %08X)",
+			m_nPresented, g_nAlignFixups, g_nAlignLastPC);
+		if (m_nPresented == 120) SaveLog ();
+	}
 	if (m_pFrameBuffer == 0) return;
 	u8 *pFB = (u8 *) (uintptr) m_pFrameBuffer->GetBuffer ();
 	unsigned nPitch = m_pFrameBuffer->GetPitch ();
@@ -214,6 +262,8 @@ void CKernel::SoundStart (int nRate, int bStereo)
 	m_nSoundChannels = bStereo ? 2 : 1;
 	if (m_pSound == 0)
 	{
+		mLogger.Write (GetKernelName (), LogNotice, "Starting sound (%s, %d Hz)", mOptions.GetSoundDevice (), nRate);
+		SaveLog ();
 		const char *pDev = mOptions.GetSoundDevice ();
 		if (strcmp (pDev, "sndnone") == 0)
 		{
@@ -233,6 +283,7 @@ void CKernel::SoundStart (int nRate, int bStereo)
 			m_bSoundOn = m_pSound->Start ();
 		}
 		mLogger.Write (GetKernelName (), LogNotice, "Sound %d Hz: %s", nRate, m_bSoundOn ? "on" : "off");
+		SaveLog ();
 	}
 }
 
@@ -450,6 +501,167 @@ int CKernel::JoyAxis (int nJoy, int nAxis)
 	return m_PadAxis[nJoy][nAxis];
 }
 
+// ---------------------------------------------------------------- diagnostics
+
+char CTeeDevice::s_Ring[CTeeDevice::RING];
+
+int CTeeDevice::Write (const void *pBuffer, size_t nCount)
+{
+	const char *p = (const char *) pBuffer;
+	for (size_t i = 0; i < nCount; i++)
+	{
+		if (p[i] == '\x1b')		// drop colour escape sequences
+		{
+			while (i < nCount && p[i] != 'm') i++;
+			continue;
+		}
+		s_Ring[m_nPos++] = p[i];
+		if (m_nPos == RING) { m_nPos = 0; m_bWrapped = TRUE; }
+	}
+	return m_pOut->Write (pBuffer, nCount);
+}
+
+unsigned CTeeDevice::GetText (char *pDest, unsigned nMax)
+{
+	unsigned nLen = m_bWrapped ? RING : m_nPos;
+	unsigned nStart = m_bWrapped ? m_nPos : 0;
+	if (nLen > nMax) { nStart = (nStart + nLen - nMax) % RING; nLen = nMax; }
+	for (unsigned i = 0; i < nLen; i++) pDest[i] = s_Ring[(nStart + i) % RING];
+	return nLen;
+}
+
+static char s_LogText[CTeeDevice::RING + 1];
+
+void CKernel::SaveLog (void)
+{
+	unsigned n = mTee.GetText (s_LogText, CTeeDevice::RING);
+	FILE *f = fopen ("/mame4all/log.txt", "w");
+	if (f != 0)
+	{
+		fwrite (s_LogText, 1, n, f);
+		fclose (f);
+	}
+}
+
+// draw the end of the log as white text on a black frame buffer
+void CKernel::ShowLog (const char *pTitle, boolean bNewScreen)
+{
+	if (bNewScreen || m_pFrameBuffer == 0 || m_pFrameBuffer->GetWidth () < 320)
+	{
+		if (m_pFrameBuffer != 0) { delete m_pFrameBuffer; m_pFrameBuffer = 0; }
+		m_pFrameBuffer = new CBcmFrameBuffer (640, 480, 16);
+		if (!m_pFrameBuffer->Initialize ()) return;
+		m_nFBWidth = 640; m_nFBHeight = 480; m_nOffsetX = 0;
+	}
+	unsigned nW = m_pFrameBuffer->GetWidth (), nH = m_pFrameBuffer->GetHeight ();
+	unsigned nPitch = m_pFrameBuffer->GetPitch ();
+	u8 *pFB = (u8 *) (uintptr) m_pFrameBuffer->GetBuffer ();
+	memset (pFB, 0, nPitch * nH);
+
+	static CCharGenerator Font;
+	unsigned cw = Font.GetCharWidth (), ch = Font.GetCharHeight ();
+	unsigned nCols = nW / cw, nRows = nH / ch;
+
+	// collect the last lines: title first, then as many log lines as fit
+	unsigned n = mTee.GetText (s_LogText, CTeeDevice::RING);
+	s_LogText[n] = 0;
+	const char *Lines[64];
+	unsigned nLines = 0;
+	char *p = s_LogText + n;
+	unsigned nUsed = 2;
+	while (p > s_LogText && nLines < 64)
+	{
+		if (p[-1] == '\n') *--p = 0;
+		char *q = p;
+		while (q > s_LogText && q[-1] != '\n') q--;
+		unsigned nNeed = (strlen (q) + nCols - 1) / nCols;
+		if (nNeed == 0) nNeed = 1;
+		if (nUsed + nNeed > nRows) break;
+		nUsed += nNeed;
+		Lines[nLines++] = q;
+		p = q;
+	}
+
+	unsigned y = 0;
+	auto DrawLine = [&] (const char *s, u16 color)
+	{
+		do
+		{
+			if (y >= nRows) return;
+			for (unsigned c = 0; c < nCols && s[c]; c++)
+			{
+				char chr = s[c] == '\r' || s[c] == '\t' ? ' ' : s[c];
+				for (unsigned yy = 0; yy < ch; yy++)
+				{
+					u16 *pLine = (u16 *) (pFB + (y * ch + yy) * nPitch) + c * cw;
+					for (unsigned xx = 0; xx < cw; xx++)
+						pLine[xx] = Font.GetPixel (chr, xx, yy) ? color : 0;
+				}
+			}
+			y++;
+			s += strlen (s) > nCols ? nCols : strlen (s);
+		}
+		while (*s);
+	};
+	DrawLine (pTitle, 0xFFE0);
+	CString Fix;
+	Fix.Format ("alignment fixups: %u (last PC %08X addr %08X)", g_nAlignFixups, g_nAlignLastPC, g_nAlignLastAddr);
+	DrawLine (Fix, 0x07FF);
+	while (nLines > 0 && y < nRows) DrawLine (Lines[--nLines], 0xFFFF);
+}
+
+// one status line at the bottom of the current screen (ROM loading, decryption)
+void CKernel::ShowStatus (const char *pText)
+{
+	Heartbeat ();
+	mLogger.Write (GetKernelName (), LogDebug, "%s", pText);
+	if (m_pFrameBuffer == 0) return;
+	static CCharGenerator Font;
+	unsigned cw = Font.GetCharWidth (), ch = Font.GetCharHeight ();
+	unsigned nW = m_pFrameBuffer->GetWidth (), nH = m_pFrameBuffer->GetHeight ();
+	if (nH < ch) return;
+	unsigned nPitch = m_pFrameBuffer->GetPitch ();
+	u8 *pFB = (u8 *) (uintptr) m_pFrameBuffer->GetBuffer ();
+	unsigned y0 = nH - ch;
+	for (unsigned yy = 0; yy < ch; yy++)
+	{
+		u16 *pLine = (u16 *) (pFB + (y0 + yy) * nPitch);
+		for (unsigned x = 0; x < nW; x++)
+		{
+			unsigned c = x / cw;
+			char chr = c < strlen (pText) ? pText[c] : ' ';
+			pLine[x] = Font.GetPixel (chr, x % cw, yy) ? 0xFFE0 : 0x0000;
+		}
+	}
+}
+
+void CKernel::PanicHandler (void)
+{
+	CKernel *p = s_pThis;
+	p->ShowLog ("MAME4ALL crashed (log: /mame4all/log.txt)", TRUE);
+	EnableIRQs ();			// the SD card driver needs the timer interrupt
+	p->SaveLog ();
+}
+
+// 100 Hz: if the main loop stops for 60 s, show the log on the screen
+void CKernel::WatchdogHandler (void)
+{
+	CKernel *p = s_pThis;
+	if (p == 0) return;
+	if (p->m_nHeartbeat != p->m_nWatchBeat)
+	{
+		p->m_nWatchBeat = p->m_nHeartbeat;
+		p->m_nWatchTicks = 0;
+		p->m_bHangShown = FALSE;
+		return;
+	}
+	if (++p->m_nWatchTicks == 60 * HZ && !p->m_bHangShown)
+	{
+		p->m_bHangShown = TRUE;
+		p->ShowLog ("MAME4ALL: no response for 60 s (still loading, or hung)", FALSE);
+	}
+}
+
 // ---------------------------------------------------------------- C glue for the OSD layer
 
 extern "C" {
@@ -458,9 +670,12 @@ void cg_fb_set_mode (int width, int height)	{ CKernel::Get ()->SetMode (width, h
 void cg_fb_present (const unsigned short *p, int w, int h)	{ CKernel::Get ()->Present565 (p, w, h); }
 void cg_fb_present8 (const unsigned char *p, const unsigned short *pal, int w, int h)
 						{ CKernel::Get ()->Present8 (p, pal, w, h); }
-void cg_wait_vsync (void)			{ CKernel::Get ()->WaitVSync (); }
+void cg_wait_vsync (void)			{ CKernel::Get ()->Heartbeat (); CKernel::Get ()->WaitVSync (); }
 unsigned long cg_ticks_us (void)		{ return CTimer::GetClockTicks (); }
-void cg_poll_input (void)			{ CKernel::Get ()->PollInput (); }
+void cg_poll_input (void)			{ CKernel::Get ()->Heartbeat (); CKernel::Get ()->PollInput (); }
+void cg_heartbeat (void)			{ CKernel::Get ()->Heartbeat (); }
+void cg_status (const char *text)		{ CKernel::Get ()->ShowStatus (text); }
+void cg_save_log (void)			{ CKernel::Get ()->SaveLog (); }
 void cg_sound_start (int rate, int stereo)	{ CKernel::Get ()->SoundStart (rate, stereo); }
 void cg_sound_stop (void)			{ CKernel::Get ()->SoundStop (); }
 int cg_sound_free_frames (void)			{ return 0; }

@@ -24,7 +24,7 @@ struct fe_driver {
     int available;
 };
 
-#define NUMGAMES 2270
+#define NUMGAMES 2700	/* as in gp2x_frontend_list.h */
 extern fe_driver fe_drivers[NUMGAMES];
 
 int  msdos_init_sound(void);

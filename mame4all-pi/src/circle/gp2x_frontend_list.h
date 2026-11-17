@@ -6,7 +6,7 @@ struct fe_driver {
 	int available;
 };
 
-#define NUMGAMES 2270
+#define NUMGAMES 2700	/* static list (2270 entries) + room for drivers added later, see fe_list_sync() */
 
 struct fe_driver fe_drivers[NUMGAMES] = {
 

@@ -3709,8 +3709,11 @@ ROM_END
 
 /******************************************************************************/
 
+extern "C" void cg_status(const char *text);
+
 static void neo_decrypt_sprites(int cmc50, int key)
 {
+	cg_status(" Decrypting graphics ...");
 	UINT8 *spr = memory_region(REGION_GFX2);
 	UINT32 len = memory_region_length(REGION_GFX2);
 	UINT32 fixlen = memory_region_length(REGION_GFX1) - 0x20000;
@@ -3724,6 +3727,7 @@ static void neo_decrypt_sprites(int cmc50, int key)
 
 static void neo_decrypt_m1(void)
 {
+	cg_status(" Decrypting sound CPU ...");
 	neo_cmc50_m1_decrypt(memory_region(REGION_USER3), memory_region(REGION_CPU2), memory_region_length(REGION_CPU2));
 }
 

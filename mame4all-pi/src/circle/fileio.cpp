@@ -1,6 +1,7 @@
 #include "driver.h"
 #include "unzip.h"
 #include "zlib.h"
+#include "minimal.h"
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
@@ -1411,14 +1412,11 @@ int osd_ftell(void *file)
 /* return non-zero to abort loading */
 int osd_display_loading_rom_message (const char *name, int current, int total)
 {
-//sq	if( name )
-//sq		printf ("loading %-12s\n", name);
-//sq	else
-//sq		printf ("             \n");
-//sq	fflush (stdout);
-//sq
-//sq	if( keyboard_pressed (KEYCODE_LCONTROL) && keyboard_pressed (KEYCODE_C) )
-//sq		return 1;
-//sq
+	char text[96];
+	if (name)
+		snprintf(text, sizeof text, " Loading %s: %s (%d/%d)", Machine->gamedrv->name, name, current, total);
+	else
+		snprintf(text, sizeof text, " Starting %s ...", Machine->gamedrv->name);
+	cg_status(text);
 	return 0;
 }
