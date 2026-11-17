@@ -8,6 +8,8 @@
 //
 #include "kernel.h"
 #include "alignfix.h"
+#include "bigheap.h"
+#include <circle/memory.h>
 #include <circle/chargenerator.h>
 #include <circle/sound/hdmisoundbasedevice.h>
 #include <circle/sound/pwmsoundbasedevice.h>
@@ -76,6 +78,7 @@ bool CKernel::Initialize (void)
 	}
 	mUSBHCI.Initialize ();
 	mTimer.RegisterPeriodicHandler (WatchdogHandler);
+	BigHeapInit ();
 	if (!mConsole.Initialize ()) return false;
 	CGlueStdioInit (mConsole);
 	return true;
@@ -197,6 +200,11 @@ void CKernel::SetMode (int nWidth, int nHeight)
 	memset (pFB, 0, m_pFrameBuffer->GetPitch () * nHeight);
 	mLogger.Write (GetKernelName (), LogNotice, "Video %dx%d (frame %ux%d)", nWidth, nHeight, nFBWidth, nHeight);
 	m_nPresented = 0;
+	size_t nBigFree, nBigLargest;
+	BigHeapStats (&nBigFree, &nBigLargest);
+	mLogger.Write (GetKernelName (), LogNotice, "Memory: %u MB free for large blocks (largest %u MB), %u MB in Circle's heap",
+		(unsigned) (nBigFree >> 20), (unsigned) (nBigLargest >> 20),
+		(unsigned) (CMemorySystem::Get ()->GetHeapFreeSpace (HEAP_ANY) >> 20));
 	SaveLog ();
 }
 
