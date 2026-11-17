@@ -840,6 +840,55 @@ UINT32 neo_mslug3_bank_base(int sel)
 	return 0x100000 + bankoffset[bitswapn(sel, 6, sbits)];
 }
 
+/* KOF '99: SMA, same layout as Metal Slug 3 (from current MAME sma_prot.cpp) */
+int neo_kof99_decrypt_68k(UINT8 *base)
+{
+	static const int dbits[16] = {13,7,3,0,9,4,5,6,1,12,8,14,10,11,2,15};
+	static const int bbits[10] = {6,2,4,9,8,3,1,7,0,5};
+	static const int abits[18] = {11,6,14,17,16,5,8,10,12,0,4,3,2,7,9,15,13,1};
+	UINT16 *rom;
+	UINT16 *buffer;
+	int i, j;
+
+	rom = (UINT16 *)(base + 0x100000);
+	for (i = 0; i < 0x800000/2; i++)
+		rom[i] = bitswapn(rom[i], 16, dbits);
+
+	buffer = (UINT16 *)malloc(0x800);
+	if (!buffer) return 1;
+	for (i = 0; i < 0x600000/2; i += 0x800/2)
+	{
+		memcpy(buffer, &rom[i], 0x800);
+		for (j = 0; j < 0x800/2; j++)
+			rom[i + j] = buffer[bitswapn(j, 10, bbits)];
+	}
+	free(buffer);
+
+	rom = (UINT16 *)base;
+	for (i = 0; i < 0x0c0000/2; i++)
+		rom[i] = rom[0x700000/2 + ((i & ~0x3ffff) | bitswapn(i, 18, abits))];
+	return 0;
+}
+
+UINT32 neo_kof99_bank_base(int data)
+{
+	static const int bankoffset[64] =
+	{
+		0x000000, 0x100000, 0x200000, 0x300000,
+		0x3cc000, 0x4cc000, 0x3f2000, 0x4f2000,
+		0x407800, 0x507800, 0x40d000, 0x50d000,
+		0x417800, 0x517800, 0x420800, 0x520800,
+		0x424800, 0x524800, 0x429000, 0x529000,
+		0x42e800, 0x52e800, 0x431800, 0x531800,
+		0x54d000, 0x551000, 0x567000, 0x592800,
+		0x588800, 0x581800, 0x599800, 0x594800,
+		0x598000,
+	};
+	int sel =	(((data >> 14) & 1) << 0) | (((data >> 6) & 1) << 1) | (((data >> 8) & 1) << 2) |
+				(((data >> 10) & 1) << 3) | (((data >> 12) & 1) << 4) | (((data >> 5) & 1) << 5);
+	return 0x100000 + bankoffset[sel];
+}
+
 /* Metal Slug 5: PVC P ROM scramble (0x800000 bytes, native 16-bit words) */
 #define BYTE_XOR_LE(a) (a)	/* little-endian host */
 int neo_mslug5_decrypt_68k(UINT8 *rom)

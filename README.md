@@ -84,6 +84,7 @@ American Poker II при первом запуске (NVRAM пустая) пок
 | Samurai Shodown V | `samsho5` | перестановка P-ROM, CMC50, NEO-PCM2 |
 | Samurai Shodown V Special | `samsh5sp` | перестановка P-ROM, CMC50, NEO-PCM2 |
 | Sengoku 3 | `sengoku3` | CMC42 (графика и fix-слой) |
+| The King of Fighters '99 | `kof99` | SMA (шифрование 68000, переключение банков, генератор случайных чисел), CMC42 |
 | The King of Fighters '98 | `kof98` | перестановка кода 68000, защита-оверлей по адресу 0x100 |
 
 Ещё добавлены незащищённые `kof97pls`, `pbobbl2n`, `ctomaday`, `ghostlop`, `zintrckb`.

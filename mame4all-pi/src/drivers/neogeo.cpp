@@ -3479,33 +3479,44 @@ ROM_START( mslugx )
 	ROM_LOAD_GFX_ODD ( "250-c6.c6", 0x2000000, 0x800000, 0x83e3e69d ) /* Plane 2,3 */
 ROM_END
 
+#define NEO_BIOS_ONLY \
+	ROM_REGION( 0x20000, REGION_USER1 ) \
+	ROM_LOAD_WIDE_SWAP( "neo-geo.rom", 0x00000, 0x020000, 0x9036d879 )
+
+/* the fix layer data is extracted from the C ROMs; BIOS fix data after it */
+#define NEO_SFIX_FROM_C(size) \
+	ROM_REGION( (size) + 0x20000, REGION_GFX1 ) \
+	ROM_LOAD( "ng-sfix.rom", (size), 0x20000, 0x354029fc )
+
 ROM_START( kof99 )
-	ROM_REGION( 0x500000, REGION_CPU1 )
-	ROM_LOAD_WIDE_SWAP( "kof99_p1.rom", 0x000000, 0x100000, 0x00000000 )
-	ROM_LOAD_WIDE_SWAP( "kof99_p2.rom", 0x100000, 0x400000, 0x00000000 )
+	ROM_REGION( 0x900000, REGION_CPU1 )
+	ROM_LOAD_WIDE_SWAP( "ka.neo-sma", 0x0c0000, 0x040000, 0x7766d09e )	/* stored in the SMA chip */
+	ROM_LOAD_WIDE_SWAP( "251-p1.p1",  0x100000, 0x400000, 0x006e4532 )
+	ROM_LOAD_WIDE_SWAP( "251-p2.p2",  0x500000, 0x400000, 0x90175f15 )
 
-	NEO_SFIX_128K( "kof99_s1.rom", 0x00000000 )
+	NEO_SFIX_FROM_C( 0x20000 )
 
-	NEO_BIOS_SOUND_128K( "kof99_m1.rom", 0x5e74539c )
+	NEO_BIOS_SOUND_128K( "251-m1.m1", 0x5e74539c )
 
 	ROM_REGION( 0x0e00000, REGION_SOUND1 | REGIONFLAG_SOUNDONLY )
-	ROM_LOAD( "kof99_v1.rom", 0x000000, 0x400000, 0xef2eecc8 )
-	ROM_LOAD( "kof99_v2.rom", 0x400000, 0x400000, 0x73e211ca )
-	ROM_LOAD( "kof99_v3.rom", 0x800000, 0x400000, 0x821901da )
-	ROM_LOAD( "kof99_v4.rom", 0xc00000, 0x200000, 0xb49e6178 )
+	ROM_LOAD( "251-v1.v1", 0x000000, 0x400000, 0xef2eecc8 )
+	ROM_LOAD( "251-v2.v2", 0x400000, 0x400000, 0x73e211ca )
+	ROM_LOAD( "251-v3.v3", 0x800000, 0x400000, 0x821901da )
+	ROM_LOAD( "251-v4.v4", 0xc00000, 0x200000, 0xb49e6178 )
 
 	NO_DELTAT_REGION
 
-	ROM_REGION( 0x4000000, REGION_GFX2 )
-	ROM_LOAD_GFX_EVEN( "kof99_c1.rom", 0x0000000, 0x800000, 0x00000000 ) /* Plane 0,1 */
-	ROM_LOAD_GFX_ODD ( "kof99_c2.rom", 0x0000000, 0x800000, 0x00000000 ) /* Plane 2,3 */
-	ROM_LOAD_GFX_EVEN( "kof99_c3.rom", 0x1000000, 0x800000, 0x00000000 ) /* Plane 0,1 */
-	ROM_LOAD_GFX_ODD ( "kof99_c4.rom", 0x1000000, 0x800000, 0x00000000 ) /* Plane 2,3 */
-	ROM_LOAD_GFX_EVEN( "kof99_c5.rom", 0x2000000, 0x800000, 0x00000000 ) /* Plane 0,1 */
-	ROM_LOAD_GFX_ODD ( "kof99_c6.rom", 0x2000000, 0x800000, 0x00000000 ) /* Plane 2,3 */
-	ROM_LOAD_GFX_EVEN( "kof99_c7.rom", 0x3000000, 0x800000, 0x00000000 ) /* Plane 0,1 */
-	ROM_LOAD_GFX_ODD ( "kof99_c8.rom", 0x3000000, 0x800000, 0x00000000 ) /* Plane 2,3 */
+	ROM_REGION( 0x4000000, REGION_GFX2 )	/* encrypted (CMC42) */
+	ROM_LOAD_GFX_EVEN( "251-c1.c1", 0x0000000, 0x800000, 0x0f9e93fe ) /* Plane 0,1 */
+	ROM_LOAD_GFX_ODD ( "251-c2.c2", 0x0000000, 0x800000, 0xe71e2ea3 ) /* Plane 2,3 */
+	ROM_LOAD_GFX_EVEN( "251-c3.c3", 0x1000000, 0x800000, 0x238755d2 ) /* Plane 0,1 */
+	ROM_LOAD_GFX_ODD ( "251-c4.c4", 0x1000000, 0x800000, 0x438c8b22 ) /* Plane 2,3 */
+	ROM_LOAD_GFX_EVEN( "251-c5.c5", 0x2000000, 0x800000, 0x0b0abd0a ) /* Plane 0,1 */
+	ROM_LOAD_GFX_ODD ( "251-c6.c6", 0x2000000, 0x800000, 0x65bbf281 ) /* Plane 2,3 */
+	ROM_LOAD_GFX_EVEN( "251-c7.c7", 0x3000000, 0x800000, 0xff65f62e ) /* Plane 0,1 */
+	ROM_LOAD_GFX_ODD ( "251-c8.c8", 0x3000000, 0x800000, 0x8d921c68 ) /* Plane 2,3 */
 ROM_END
+
 
 ROM_START( garou )
 	ROM_REGION( 0x500000, REGION_CPU1 )
@@ -3553,15 +3564,6 @@ ROM_END
 /* Later carts with protection / encryption (ROM sets as in current MAME).    */
 /* Decryption is done once at load time, see machine/neocrypt.cpp.            */
 /******************************************************************************/
-
-#define NEO_BIOS_ONLY \
-	ROM_REGION( 0x20000, REGION_USER1 ) \
-	ROM_LOAD_WIDE_SWAP( "neo-geo.rom", 0x00000, 0x020000, 0x9036d879 )
-
-/* the fix layer data is extracted from the C ROMs; BIOS fix data after it */
-#define NEO_SFIX_FROM_C(size) \
-	ROM_REGION( (size) + 0x20000, REGION_GFX1 ) \
-	ROM_LOAD( "ng-sfix.rom", (size), 0x20000, 0x354029fc )
 
 /* CMC50 encrypted M1: loaded into REGION_USER3, decrypted into REGION_CPU2 */
 #define NEO_ENCRYPTED_M1(name,length,sum) \
@@ -3820,6 +3822,34 @@ void init_mslug3(void)
 	neogeo_fix_bank_type = 1;
 	install_mem_write_handler(0, 0x2fffe4, 0x2fffe5, mslug3_bankswitch_w);
 	install_mem_read_handler (0, 0x2fe446, 0x2fe447, mslug3_prot_r);
+}
+
+/* KOF '99: SMA (68000 encryption, bankswitch, protection, random numbers), CMC42 */
+static UINT16 kof99_rng;
+
+static WRITE_HANDLER( kof99_bankswitch_w )
+{
+	cpu_setbank(4, &memory_region(REGION_CPU1)[neo_kof99_bank_base(data & 0xffff)]);
+}
+
+static READ_HANDLER( kof99_random_r )
+{
+	UINT16 old = kof99_rng;
+	UINT16 newbit = ((kof99_rng >> 2) ^ (kof99_rng >> 3) ^ (kof99_rng >> 5) ^ (kof99_rng >> 6) ^
+					 (kof99_rng >> 7) ^ (kof99_rng >> 11) ^ (kof99_rng >> 12) ^ (kof99_rng >> 15)) & 1;
+	kof99_rng = (kof99_rng << 1) | newbit;
+	return old;
+}
+
+void init_kof99(void)
+{
+	neo_kof99_decrypt_68k(memory_region(REGION_CPU1));
+	neo_decrypt_sprites(0, KOF99_GFX_KEY);
+	init_neogeo();
+	kof99_rng = 0x2345;
+	install_mem_write_handler(0, 0x2ffff0, 0x2ffff1, kof99_bankswitch_w);
+	install_mem_read_handler (0, 0x2fe446, 0x2fe447, mslug3_prot_r);
+	install_mem_read_handler (0, 0x2ffff8, 0x2ffffb, kof99_random_r);
 }
 
 /* Metal Slug 4: CMC50 graphics and M1, NEO-PCM2 sound */
@@ -4184,7 +4214,7 @@ GAME( 1998, kof98,    neogeo,   neogeo, neogeo,  kof98,  ROT0_16BIT, "SNK", "The
 GAME( 1998, lastbld2, neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "The Last Blade 2 / Bakumatsu Roman - Dai Ni Maku Gekkano Kenshi" )
 GAME( 1998, neocup98, neogeo,   raster, neogeo,  neogeo, ROT0_16BIT, "SNK", "Neo-Geo Cup '98 - The Road to the Victory" )
 GAME( 1999, mslugx,   neogeo,   neogeo, neogeo,  mslugx, ROT0_16BIT, "SNK", "Metal Slug X - Super Vehicle-001" )
-GAME( 1999, kof99,    neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "The King of Fighters '99 - Millennium Battle" )
+GAME( 1999, kof99,    neogeo,   neogeo, neogeo,  kof99,  ROT0_16BIT, "SNK", "The King of Fighters '99 - Millennium Battle" )
 GAME( 1999, garou,    neogeo,   neogeo, neogeo,  neogeo, ROT0_16BIT, "SNK", "Garou - Mark of the Wolves" )
 GAME( 2000, mslug3,   neogeo,   neobigfix, neogeo, mslug3, ROT0_16BIT, "SNK", "Metal Slug 3" )
 GAME( 2002, mslug4,   neogeo,   neogeo, neogeo,  mslug4, ROT0_16BIT, "Mega / Noise Factory / Playmore", "Metal Slug 4" )

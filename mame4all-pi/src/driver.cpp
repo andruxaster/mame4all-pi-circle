@@ -3035,7 +3035,7 @@ TESTDRIVER( dlair )
 	DRIVER( zintrckb )	/* bootleg of the CD version */
 	DRIVER( kof97pls )	/* bootleg */
 	DRIVER( ghostlop )	/* (c) 1996 Data East (prototype) */
-TESTDRIVER( kof99 )		/* 0251 (c) 1999 SNK */
+	DRIVER( kof99 )		/* 0251 (c) 1999 SNK */
 TESTDRIVER( garou )		/* 0253 (c) 1999 SNK */
 	/* Prehistoric Isle 2 */
 	/* Strikers 1945 Plus */

@@ -20,6 +20,9 @@ int neo_samsho5_decrypt_68k(UINT8 *cpurom);
 int neo_samsh5sp_decrypt_68k(UINT8 *cpurom);
 int neo_mslug3_decrypt_68k(UINT8 *base);
 UINT32 neo_mslug3_bank_base(int sel);
+int neo_kof99_decrypt_68k(UINT8 *base);
+UINT32 neo_kof99_bank_base(int data);
+#define KOF99_GFX_KEY 0x00
 int neo_mslug5_decrypt_68k(UINT8 *rom);
 
 #endif
