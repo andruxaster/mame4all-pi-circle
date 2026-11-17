@@ -756,6 +756,18 @@ int osd_skip_this_frame(void)
 /* Update the display. */
 void osd_update_video_and_audio(struct osd_bitmap *bitmap)
 {
+	{
+		/* every ~10 s: CPU program counters into the log, to see where a hung game sits */
+		static unsigned frames;
+		if ((++frames % 600) == 0)
+		{
+			char b[160]; int n = 0, c;
+			n += sprintf(b + n, "Frame %u, autoframeskip %d, frameskip %d, PC", frames, autoframeskip, frameskip);
+			for (c = 0; c < cpu_gettotalcpu() && c < 4; c++)
+				n += sprintf(b + n, " %06x", cpunum_get_reg(c, 1));
+			cg_log(b);
+		}
+	}
 	static const int waittable[FRAMESKIP_LEVELS][FRAMESKIP_LEVELS] =
 	{
 		{ 1,1,1,1,1,1,1,1,1,1,1,1 },

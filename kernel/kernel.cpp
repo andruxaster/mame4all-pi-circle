@@ -683,6 +683,7 @@ unsigned long cg_ticks_us (void)		{ return CTimer::GetClockTicks (); }
 void cg_poll_input (void)			{ CKernel::Get ()->Heartbeat (); CKernel::Get ()->PollInput (); }
 void cg_heartbeat (void)			{ CKernel::Get ()->Heartbeat (); }
 void cg_status (const char *text)		{ CKernel::Get ()->ShowStatus (text); }
+void cg_log (const char *text)			{ CLogger::Get ()->Write ("mame4all", LogNotice, "%s", text); }
 void cg_save_log (void)			{ CKernel::Get ()->SaveLog (); }
 void cg_sound_start (int rate, int stereo)	{ CKernel::Get ()->SoundStart (rate, stereo); }
 void cg_sound_stop (void)			{ CKernel::Get ()->SoundStop (); }

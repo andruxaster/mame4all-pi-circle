@@ -421,6 +421,7 @@ gui_loop:
     }
 
     res = run_game (game_index);
+	cg_save_log ();		/* log.txt on the SD card after every game */
 
 	/* close open files */
 	if (errorlog) fclose (errorlog);
