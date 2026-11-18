@@ -73,7 +73,22 @@ static int c2_scancount, c2_scancalls, c2_scanline1, c2_scanline2;
 #define C2_MULT_RESULT_LO	0x44
 #define C2_MULT_RESULT_HI	0x46
 
-static void cps2_render(struct osd_bitmap *bitmap);
+static void cps2_render(struct osd_bitmap *bitmap, int first, int last);
+
+static void cps2_build_palette(void);
+static void cps2_palette_new_frame(void);
+static int c2_next_line;		/* first line not drawn yet in this frame */
+
+/* MAME force_partial_update(): draw the lines up to "line" with the current state */
+static void cps2_partial_update(int line)
+{
+	if (line >= c2_next_line)
+	{
+		if (!osd_skip_this_frame())
+			cps2_render(Machine->scrbitmap, c2_next_line, line);
+		c2_next_line = line + 1;
+	}
+}
 
 /* ------------------------------------------------------------------------ */
 /* Memory handlers                                                          */
@@ -95,6 +110,7 @@ static WRITE_HANDLER( cps2_output_w )
 	offset &= 0xfe;
 	v = COMBINE_WORD(OUTW(offset), data);
 	WRITE_WORD(&c2_output[offset], v);
+	if (offset == 0x0a) cps2_build_palette();	/* palette DMA happens when the base is written */
 	if (offset == 0x50) c2_scanline1 = v & 0x1ff;
 	if (offset == 0x52) c2_scanline2 = v & 0x1ff;
 }
@@ -241,6 +257,8 @@ static int cps2_interrupt(void)
 	{
 		c2_scancount = -1;
 		c2_scancalls = 0;
+		c2_next_line = 0;	/* new frame */
+		cps2_palette_new_frame();
 	}
 	c2_scancount++;
 
@@ -252,6 +270,7 @@ static int cps2_interrupt(void)
 		WRITE_WORD(&c2_output[0x50], 0);
 		irq = 4;
 		c2_pri_ctrl = OBJREG(0x04);
+		cps2_partial_update(16 - 10 + c2_scancount);
 		c2_scancalls++;
 	}
 	if (c2_scanline2 == c2_scancount || (c2_scanline2 < c2_scancount && !c2_scancalls))
@@ -259,6 +278,7 @@ static int cps2_interrupt(void)
 		WRITE_WORD(&c2_output[0x52], 0);
 		irq = 4;
 		c2_pri_ctrl = OBJREG(0x04);
+		cps2_partial_update(16 - 10 + c2_scancount);
 		c2_scancalls++;
 	}
 
@@ -268,9 +288,11 @@ static int cps2_interrupt(void)
 		WRITE_WORD(&c2_output[0x52], c2_scanline2);
 		if (irq == 4) cpu_cause_interrupt(0, 4);
 		irq = 2;
-		/* draw now, before the game updates the registers in vblank */
-		if (!osd_skip_this_frame())
-			cps2_render(Machine->scrbitmap);
+		if (c2_scancalls) c2_pri_ctrl = OBJREG(0x04);
+		/* rest of the frame, before the game updates the registers in vblank */
+		cps2_partial_update(256);
+		c2_next_line = 0;
+		cps2_palette_new_frame();
 		cps2_objram_latch();
 	}
 	return irq;
@@ -280,6 +302,7 @@ static void cps2_init_machine(void)
 {
 	c2_scancount = 0;
 	c2_scancalls = 0;
+	c2_next_line = 0;
 	c2_scanline1 = c2_scanline2 = 262;
 	c2_objram_bank = 0;
 	c2_pri_ctrl = 0;
@@ -309,24 +332,59 @@ static UINT8 *c2_vram_base(int reg, int boundary)
 	return &c2_gfxram[base & 0x3ffff];
 }
 
-static void cps2_build_palette(void)
-{
-	UINT8 *pal = c2_vram_base(0x0a, 0x800);
-	int i;
+/* Palette DMA (on writes of the palette base). The game may change the palette
+   in the middle of a frame (raster IRQ); with a palettized display that would
+   recolour the lines already drawn, so each change within a frame goes to the
+   next of C2_PAL_BANKS banks of 4096 pens. */
+#define C2_PAL_BANKS	4
+static UINT16 c2_cur_pal[4096];
+static int c2_pal_bank, c2_bank_line;
 
+static void cps2_upload_palette(int bank)
+{
+	UINT16 *cache = c2_old_palette + bank * 4096;
+	int i;
 	for (i = 0; i < 4096; i++)
 	{
-		int p = READ_WORD(&pal[i * 2]);
-		if (p != c2_old_palette[i])
+		int p = c2_cur_pal[i];
+		if (p != cache[i])
 		{
 			int bright = 0x10 + (p >> 12);
 			int r = ((p >> 8) & 0x0f) * bright * 0x11 / 0x1f;
 			int g = ((p >> 4) & 0x0f) * bright * 0x11 / 0x1f;
 			int b = ((p >> 0) & 0x0f) * bright * 0x11 / 0x1f;
-			palette_change_color(i, r, g, b);
-			c2_old_palette[i] = p;
+			palette_change_color(bank * 4096 + i, r, g, b);
+			cache[i] = p;
 		}
 	}
+}
+
+static void cps2_build_palette(void)
+{
+	UINT8 *pal;
+	int i;
+
+	if (!c2_gfxram || !c2_old_palette) return;
+	pal = c2_vram_base(0x0a, 0x800);
+	for (i = 0; i < 4096; i++) c2_cur_pal[i] = READ_WORD(&pal[i * 2]);
+
+	if (c2_next_line > c2_bank_line && c2_pal_bank < C2_PAL_BANKS - 1)
+	{
+		c2_pal_bank++;			/* lines drawn with the old colours stay as they are */
+		c2_bank_line = c2_next_line;
+	}
+	cps2_upload_palette(c2_pal_bank);
+}
+
+/* start of a frame: back to bank 0 with the current colours */
+static void cps2_palette_new_frame(void)
+{
+	if (c2_pal_bank != 0 && c2_old_palette)
+	{
+		c2_pal_bank = 0;
+		cps2_upload_palette(0);
+	}
+	c2_bank_line = 0;
 }
 
 /* layer: 0 = scroll1 (8x8), 1 = scroll2 (16x16), 2 = scroll3 (32x32) */
@@ -348,7 +406,7 @@ static void cps2_draw_layer(struct osd_bitmap *bitmap, int layer, int primask)
 	int videocontrol = OUTW(0x22);
 	UINT8 *other = c2_vram_base(0x08, 0x800);
 	int otheroffs = OUTW(0x20);
-	const UINT16 *pens = Machine->pens + (32 * (layer + 1)) * 16;
+	const UINT16 *pens = Machine->pens + c2_pal_bank * 4096 + (32 * (layer + 1)) * 16;
 	int width = Machine->drv->screen_width;
 	int y;
 
@@ -411,10 +469,12 @@ static void cps2_draw_sprite(struct osd_bitmap *bitmap, int code, int color, int
 	const UINT8 *gfx = memory_region(REGION_GFX1);
 	int nelem = memory_region_length(REGION_GFX1) / 128;
 	const UINT8 *src = gfx + (code % nelem) * 128;
-	const UINT16 *pens = Machine->pens + color * 16;
+	const UINT16 *pens = Machine->pens + c2_pal_bank * 4096 + color * 16;
+	UINT32 pmask = (UINT32)primask | 0x80000000;	/* pdrawgfx: a drawn sprite pixel (31) is not overdrawn */
 	int width = Machine->drv->screen_width;
 	int x, y;
 
+	(void)0;
 	if (sx >= c2_clip_r || sx + 16 <= c2_clip_l || sy >= c2_clip_b || sy + 16 <= c2_clip_t) return;
 
 	for (y = 0; y < 16; y++)
@@ -434,7 +494,7 @@ static void cps2_draw_sprite(struct osd_bitmap *bitmap, int code, int color, int
 			c = flipx ? 15 - x : x;
 			pen = (row[c >> 1] >> ((c & 1) * 4)) & 0x0f;
 			if (pen == 15) continue;
-			if ((primask >> pri[dx]) & 1) continue;	/* hidden by a tile layer */
+			if ((pmask >> pri[dx]) & 1) continue;	/* hidden by a tile layer or an earlier drawn sprite */
 			dest[dx] = pens[pen];
 			pri[dx] = 31;
 		}
@@ -506,7 +566,7 @@ static void cps2_draw_sprites(struct osd_bitmap *bitmap, int *primasks)
 	}
 }
 
-static void cps2_render(struct osd_bitmap *bitmap)
+static void cps2_render(struct osd_bitmap *bitmap, int first, int last)
 {
 	int layercontrol = OUTW(C2_LAYER_CONTROL);
 	static const int enable_mask[3] = { 0x02, 0x04, 0x08 };
@@ -518,9 +578,11 @@ static void cps2_render(struct osd_bitmap *bitmap)
 	c2_clip_r = Machine->visible_area.max_x + 1;
 	c2_clip_t = Machine->visible_area.min_y;
 	c2_clip_b = Machine->visible_area.max_y + 1;
+	if (first > c2_clip_t) c2_clip_t = first;
+	if (last + 1 < c2_clip_b) c2_clip_b = last + 1;
+	if (c2_clip_t >= c2_clip_b) return;
 
-	cps2_build_palette();
-	bg = Machine->pens[4095];
+	bg = Machine->pens[c2_pal_bank * 4096 + 4095];
 
 	for (y = c2_clip_t; y < c2_clip_b; y++)
 	{
@@ -578,7 +640,7 @@ static int c2_vh_start(void)
 	c2_objram[0] = (UINT8 *)malloc(CPS2_OBJ_SIZE);
 	c2_objram[1] = (UINT8 *)malloc(CPS2_OBJ_SIZE);
 	c2_obj_buffered = (UINT8 *)malloc(CPS2_OBJ_SIZE);
-	c2_old_palette = (UINT16 *)malloc(4096 * sizeof(UINT16));
+	c2_old_palette = (UINT16 *)malloc(C2_PAL_BANKS * 4096 * sizeof(UINT16));
 	c2_pri = (UINT8 *)malloc(Machine->drv->screen_width * Machine->drv->screen_height);
 	if (!c2_gfxram || !c2_objram[0] || !c2_objram[1] || !c2_obj_buffered || !c2_old_palette || !c2_pri)
 		return 1;
@@ -586,10 +648,12 @@ static int c2_vh_start(void)
 	memset(c2_objram[0], 0, CPS2_OBJ_SIZE);
 	memset(c2_objram[1], 0, CPS2_OBJ_SIZE);
 	memset(c2_obj_buffered, 0, CPS2_OBJ_SIZE);
-	memset(c2_old_palette, 0xff, 4096 * sizeof(UINT16));	/* force the first update */
+	memset(c2_old_palette, 0xff, C2_PAL_BANKS * 4096 * sizeof(UINT16));	/* force the first update */
+	c2_pal_bank = 0;
+	c2_bank_line = 0;
 	{
 		int i;
-		for (i = 0; i < 4096; i++) palette_change_color(i, 0, 0, 0);
+		for (i = 0; i < C2_PAL_BANKS * 4096; i++) palette_change_color(i, 0, 0, 0);
 	}
 	return 0;
 }
@@ -794,7 +858,7 @@ static struct MachineDriver machine_driver_cps2 =
 	/* video hardware */
 	64*8, 32*8, { 8*8, (64-8)*8-1, 2*8, 30*8-1 },
 	0,
-	4096, 0,
+	4 * 4096, 0,		/* C2_PAL_BANKS palettes */
 	0,
 
 	VIDEO_TYPE_RASTER | VIDEO_MODIFIES_PALETTE,
