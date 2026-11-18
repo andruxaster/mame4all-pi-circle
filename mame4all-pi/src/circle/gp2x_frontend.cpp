@@ -357,10 +357,9 @@ static void fe_list_sync(void)
 static void game_list_init(int argc)
 {
 	fe_list_sync();
-	if (argc==1)
-		game_list_init_nocache();
-	else
-		game_list_init_cache();
+	/* always scan the ROM folder: frontend/mame.lst stores positions in the
+	   game list, which move whenever a new kernel adds drivers */
+	game_list_init_nocache();
 }
 
 static void game_list_view(int *pos) {
