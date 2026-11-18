@@ -13,12 +13,39 @@ typedef struct
 static Cyclone_Regs cyclone;
 int *cyclone_cycles=&cyclone.regs.cycles;
 
+/* Encrypted opcodes (CPS2): program space reads below c68k_dec_limit come
+   from c68k_dec_base (same layout as the ROM region), data reads do not. */
+unsigned char *c68k_dec_base = 0;
+unsigned int c68k_dec_limit = 0;
+
 static unsigned int MyCheckPc(unsigned int pc)
 {
   	pc = (pc-cyclone.regs.membase) & 0xffffff; /* Get the real program counter */
 	change_pc24bew(pc);
-	cyclone.regs.membase=(unsigned int)OP_ROM;
+	if (c68k_dec_base && pc < c68k_dec_limit)
+		cyclone.regs.membase=(unsigned int)c68k_dec_base;
+	else
+		cyclone.regs.membase=(unsigned int)OP_ROM;
   	return cyclone.regs.membase+pc; /* New program counter */
+}
+
+static unsigned int MyFetch8(unsigned int a)
+{
+	a &= 0xffffff;
+	if (a < c68k_dec_limit) return c68k_dec_base[a ^ 1];
+	return cpu_readmem24bew(a);
+}
+
+static unsigned int MyFetch16(unsigned int a)
+{
+	a &= 0xffffff;
+	if (a < c68k_dec_limit) return READ_WORD(&c68k_dec_base[a & ~1]);
+	return cpu_readmem24bew_word(a);
+}
+
+static unsigned int MyFetch32(unsigned int a)
+{
+	return (MyFetch16(a) << 16) | MyFetch16(a + 2);
 }
 
 static void update_irq_line(void)
@@ -74,11 +101,17 @@ void cyclone_reset(void *param)
 	cyclone.regs.fetch8  = (unsigned int (*)(unsigned int)) cpu_readmem24bew;
 	cyclone.regs.fetch16 = (unsigned int (*)(unsigned int)) cpu_readmem24bew_word;
 	cyclone.regs.fetch32 = (unsigned int (*)(unsigned int)) cpu_readmem24bew_dword;
+	if (c68k_dec_base)
+	{
+		cyclone.regs.fetch8  = MyFetch8;
+		cyclone.regs.fetch16 = MyFetch16;
+		cyclone.regs.fetch32 = MyFetch32;
+	}
 	cyclone.regs.IrqCallback=MyIrqCallback; /* 0 */
   	cyclone.regs.srh=0x27; /* Set supervisor mode */
-  	cyclone.regs.a[7]=cyclone.regs.read32(0); /* Get Stack Pointer */
+  	cyclone.regs.a[7]=cyclone.regs.fetch32(0); /* Get Stack Pointer (program space) */
   	cyclone.regs.membase=0;
-  	cyclone.regs.pc=cyclone.regs.checkpc(cyclone.regs.read32(4)); /* Get Program Counter */
+  	cyclone.regs.pc=cyclone.regs.checkpc(cyclone.regs.fetch32(4)); /* Get Program Counter */
 	cyclone.regs.state_flags = 0; /* not stopped or tracing */
    	cyclone.pending_interrupts = 0;
 }
@@ -116,6 +149,8 @@ int cyclone_execute(int cycles)
 
 void cyclone_exit(void)
 {
+	c68k_dec_base = 0;		/* the driver frees the buffer */
+	c68k_dec_limit = 0;
 }
 
 void cyclone_set_pc(unsigned val)

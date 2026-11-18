@@ -93,6 +93,16 @@ American Poker II при первом запуске (NVRAM пустая) пок
 
 `tools/neo_romconv.py` и `tools/neo_addsets.py` переносят ROM-таблицы из `src/mame/snk/neogeo.cpp` современного MAME в синтаксис 0.37b5.
 
+## CPS2
+
+Вместо заглушки MAME 0.37 написан новый драйвер CPS2 (`mame4all-pi/src/drivers/cps2.cpp`):
+
+- расшифровка кода 68000 из MAME 0.139 (`src/machine/cps2crpt.cpp`, ключи встроены, файлы `.key` не нужны). Ядро Cyclone читает команды и PC-относительные данные из расшифрованной копии;
+- своя отрисовка: три слоя CPS-A, спрайты CPS2 и схема приоритетов спрайтов и слоёв, как в MAME 0.78;
+- EEPROM, растровые прерывания, QSound из драйвера CPS1.
+
+Игры: `sfz2al` (Street Fighter Zero 2 Alpha, Asia 960826), набор ROM из современного MAME.
+
 ## Структура
 
 ```
