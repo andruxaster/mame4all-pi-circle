@@ -88,9 +88,12 @@ void neogeo_init_machine(void)
 
 
 /* This function is only called once per game. */
+extern int neogeo_lspc_counter;
+
 void init_neogeo(void)
 {
 	unsigned char *RAM = memory_region(REGION_CPU1);
+	neogeo_lspc_counter = 0;
 	extern struct YM2610interface neogeo_ym2610_interface;
 	extern int neogeo_fix_bank_type;
 

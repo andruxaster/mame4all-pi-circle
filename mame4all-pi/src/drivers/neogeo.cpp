@@ -454,6 +454,8 @@ static WRITE_HANDLER( neo_bankswitch_w )
 
 
 /* TODO: Figure out how this really works! */
+int neogeo_lspc_counter;	/* 1: line counter as in current MAME (mslug5) */
+
 static READ_HANDLER( neo_control_r )
 {
 	int line,irq_bit;
@@ -484,6 +486,16 @@ static READ_HANDLER( neo_control_r )
 		  in blazstar, this controls the background speed in level 2.
 	*/
 //logerror("PC %06x: neo_control_r\n",cpu_get_pc());
+
+	if (neogeo_lspc_counter)
+	{
+		/* current MAME: 9 bit line counter 0xf8-0x1ff (bit 8 = bit 15 of the
+		   register, clear only in the last vblank lines), frame counter */
+		int vpos = cpu_getscanline() * 264 / Machine->drv->screen_height;
+		int v_counter = vpos + 0x100;
+		if (v_counter >= 0x200) v_counter -= 264;
+		return ((v_counter << 7) & 0xff80) | (neogeo_frame_counter & 0x0007);
+	}
 
 	line = RASTER_LINES - cpu_getiloops();
 	irq_bit = (irq2enable && (line == irq2start || line == lastirq2line + irq2repeat)) ||
@@ -4023,6 +4035,7 @@ void init_mslug5(void)
 	init_neogeo();
 
 	memset(pvc_ram, 0, sizeof pvc_ram);
+	neogeo_lspc_counter = 1;
 	install_mem_read_handler (0, 0x2fe000, 0x2fffff, pvc_prot_r);
 	install_mem_write_handler(0, 0x2fe000, 0x2fffff, pvc_prot_w);
 }
