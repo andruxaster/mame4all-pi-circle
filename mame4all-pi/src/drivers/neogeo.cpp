@@ -454,7 +454,7 @@ static WRITE_HANDLER( neo_bankswitch_w )
 
 
 /* TODO: Figure out how this really works! */
-int neogeo_lspc_counter;	/* 1: line counter as in current MAME (mslug5) */
+int neogeo_lspc_counter;	/* 1: line counter as in current MAME (mslug4, mslug5) */
 
 static READ_HANDLER( neo_control_r )
 {
@@ -3872,6 +3872,7 @@ void init_mslug4(void)
 	if (memory_region(REGION_SOUND1))
 		neo_pcm2_decrypt(memory_region(REGION_SOUND1), memory_region_length(REGION_SOUND1), 8);
 	init_neogeo();
+	neogeo_lspc_counter = 1;	/* eye catcher after the demos waits for the line counter */
 }
 
 /* Sengoku 3: CMC42 graphics */
