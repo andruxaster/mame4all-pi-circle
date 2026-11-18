@@ -5365,6 +5365,35 @@ ROM_START( sf2t )
 	ROM_LOAD( "sf2.19",       0x20000, 0x20000, 0xbeade53f )
 ROM_END
 
+ROM_START( sf2hf )
+	ROM_REGION( CODE_SIZE, REGION_CPU1 )      /* 68000 code */
+	ROM_LOAD_WIDE_SWAP( "s2te_23.8f",   0x000000, 0x80000, 0x2dd72514 )
+	ROM_LOAD_WIDE_SWAP( "s2te_22.7f",   0x080000, 0x80000, 0xaea6e035 )
+	ROM_LOAD_WIDE_SWAP( "s2te_21.6f",   0x100000, 0x80000, 0xfd200288 )
+
+	ROM_REGION( 0x600000, REGION_GFX1 | REGIONFLAG_DISPOSE )
+	ROM_LOAD( "s92-2m.4a",    0x000000, 0x80000, 0xcdb5f027 )
+	ROM_LOAD( "s92-6m.8a",    0x080000, 0x80000, 0x21e3f87d )
+	ROM_LOAD( "s92-11m.4c",   0x100000, 0x80000, 0xd6ec9a0a )
+	ROM_LOAD( "s92-1m.3a",    0x180000, 0x80000, 0x03b0d852 )
+	ROM_LOAD( "s92-5m.7a",    0x200000, 0x80000, 0xba8a2761 )
+	ROM_LOAD( "s92-10m.3c",   0x280000, 0x80000, 0x960687d5 )
+	ROM_LOAD( "s92-4m.6a",    0x300000, 0x80000, 0xe2799472 )
+	ROM_LOAD( "s92-8m.10a",   0x380000, 0x80000, 0xbefc47df )
+	ROM_LOAD( "s92-13m.6c",   0x400000, 0x80000, 0xed2c67f6 )
+	ROM_LOAD( "s92-3m.5a",    0x480000, 0x80000, 0x840289ec )
+	ROM_LOAD( "s92-7m.9a",    0x500000, 0x80000, 0xe584bfb5 )
+	ROM_LOAD( "s92-12m.5c",   0x580000, 0x80000, 0x978ecd18 )
+
+	ROM_REGION( 0x18000, REGION_CPU2 ) /* 64k for the audio CPU (+banks) */
+	ROM_LOAD( "s92_09.11a",    0x00000, 0x08000, 0x08f6b60e )
+	ROM_CONTINUE(              0x10000, 0x08000 )
+
+	ROM_REGION( 0x40000, REGION_SOUND1 )	/* Samples */
+	ROM_LOAD( "s92_18.11c",   0x00000, 0x20000, 0x7f162009 )
+	ROM_LOAD( "s92_19.12c",   0x20000, 0x20000, 0xbeade53f )
+ROM_END
+
 ROM_START( sf2tj )
 	ROM_REGION( CODE_SIZE, REGION_CPU1 )      /* 68000 code */
 	ROM_LOAD_WIDE_SWAP( "sf2tj.23",   0x000000, 0x80000, 0xea73b4dc )
@@ -6058,6 +6087,7 @@ GAME( 1992, varthu,   varth,    cps1,     varth,    0,        ROT270,     "Capco
 GAME( 1992, varthj,   varth,    cps1,     varth,    0,        ROT270,     "Capcom", "Varth - Operation Thunderstorm (Japan)" )
 GAME( 1992, cworld2j, 0,        cps1,     cworld2j, 0,        ROT0_16BIT, "Capcom", "Capcom World 2 (Japan)" )
 GAME( 1992, sf2t,     sf2ce,    sf2,      sf2,      0,        ROT0,       "Capcom", "Street Fighter II' - Hyper Fighting (US)" )
+GAME( 1992, sf2hf,    sf2ce,    sf2,      sf2,      0,        ROT0,       "Capcom", "Street Fighter II' - Hyper Fighting (World 921209)" )
 GAME( 1992, sf2tj,    sf2ce,    sf2,      sf2,      0,        ROT0,       "Capcom", "Street Fighter II' Turbo - Hyper Fighting (Japan)" )
 GAME( 1994, pnickj,   0,        cps1,     pnickj,   0,        ROT0,       "Capcom (licensed from Compile)", "Pnickies (Japan)" )
 GAME( 1992, qad,      0,        cps1,     qad,      0,        ROT0,       "Capcom", "Quiz & Dragons (US)" )

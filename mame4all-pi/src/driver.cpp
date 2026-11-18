@@ -1279,6 +1279,7 @@ TESTDRIVER( defndjeu )	/* bootleg */
 	DRIVER( wofa )		/* 10/ 5/1992 (c) 1992 (Asia)  (CPS1 + QSound) */
 	DRIVER( wofj )		/* 10/31/1992 (c) 1992 (Japan) (CPS1 + QSound) */
 	DRIVER( sf2t )		/* 12/ 9/1992 (c) 1992 (US)    */
+	DRIVER( sf2hf )		/* 09/12/1992 (c) 1992 (World) */
 	DRIVER( sf2tj )		/* 12/ 9/1992 (c) 1992 (Japan) */
 	DRIVER( dino )		/*  2/ 1/1993 (c) 1993 (World) (CPS1 + QSound) */
 	DRIVER( dinoj )		/*  2/ 1/1993 (c) 1993 (Japan) (CPS1 + QSound) */
